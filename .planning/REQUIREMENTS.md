@@ -1,0 +1,127 @@
+# Requirements: SimpleBudget
+
+**Defined:** 2026-05-12
+**Core Value:** Users can log an expense and see their remaining balance in under 5 seconds.
+
+## v1 Requirements
+
+### Dashboard
+
+- [ ] **DASH-01**: User sees monthly income/starting balance prominently displayed
+- [ ] **DASH-02**: User sees total expenses clearly
+- [ ] **DASH-03**: User sees remaining balance (visually emphasized)
+- [ ] **DASH-04**: User sees recent transactions list
+- [ ] **DASH-05**: No charts, tabs, or hidden calculations
+
+### Expense Entry
+
+- [ ] **EXP-01**: User can add expense with amount, category, optional note, date
+- [ ] **EXP-02**: Date field defaults to today
+- [ ] **EXP-03**: Category dropdown with predefined categories
+- [ ] **EXP-04**: Expense saves to Supabase instantly
+- [ ] **EXP-05**: Dashboard updates immediately after save
+- [ ] **EXP-06**: Maximum 4 fields per form
+
+### Transactions
+
+- [ ] **TRAN-01**: User can view chronological list of expenses
+- [ ] **TRAN-02**: Each transaction shows amount, category, date, note
+- [ ] **TRAN-03**: User can edit existing transaction
+- [ ] **TRAN-04**: User can delete transaction with confirmation
+- [ ] **TRAN-05**: Balance recalculates after edit/delete
+
+### Monthly Balance
+
+- [ ] **BAL-01**: User can set monthly income or starting balance
+- [ ] **BAL-02**: System subtracts expenses from balance automatically
+- [ ] **BAL-03**: Balance updates in real-time after any change
+- [ ] **BAL-04**: No complex category budgets in MVP
+
+### Authentication
+
+- [ ] **AUTH-01**: User can sign up with email and password
+- [ ] **AUTH-02**: User can log in with email and password
+- [ ] **AUTH-03**: User session persists across browser refresh
+- [ ] **AUTH-04**: User can log out
+- [ ] **AUTH-05**: Row-Level Security protects user data
+
+### Voice Entry
+
+- [ ] **VOIC-01**: User can tap microphone to start voice input
+- [ ] **VOIC-02**: Browser requests microphone permission on first use
+- [ ] **VOIC-03**: System extracts amount from speech
+- [ ] **VOIC-04**: System matches category from keywords
+- [ ] **VOIC-05**: Form pre-fills with extracted data
+- [ ] **VOIC-06**: User must confirm before saving (no auto-save)
+- [ ] **VOIC-07**: Graceful fallback if browser doesn't support Web Speech API
+
+## v2 Requirements
+
+### History
+
+- **HIST-01**: User can view previous months' transaction lists
+- **HIST-02**: User can switch between months with simple selector
+
+### Data
+
+- **DATA-01**: User can export transactions as CSV
+- **DATA-02**: User can add custom categories
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Bank account linking | Adds complexity, privacy concerns, monthly fees |
+| Investment tracking | Not a budgeting tool, different use case |
+| Advanced analytics/charts | Adds cognitive load, MVP focuses on clarity |
+| Multi-currency support | Adds complexity for small user benefit |
+| Recurring automation | Defer to future when core is stable |
+| Native mobile apps | PWA first, wrap later if needed |
+| Subscription tiers | Always free and open source |
+| AI-powered insights | Counter to minimalist philosophy |
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| DASH-01 | Phase 1 | Pending |
+| DASH-02 | Phase 1 | Pending |
+| DASH-03 | Phase 1 | Pending |
+| DASH-04 | Phase 1 | Pending |
+| DASH-05 | Phase 1 | Pending |
+| EXP-01 | Phase 1 | Pending |
+| EXP-02 | Phase 1 | Pending |
+| EXP-03 | Phase 1 | Pending |
+| EXP-04 | Phase 1 | Pending |
+| EXP-05 | Phase 1 | Pending |
+| EXP-06 | Phase 1 | Pending |
+| TRAN-01 | Phase 1 | Pending |
+| TRAN-02 | Phase 1 | Pending |
+| TRAN-03 | Phase 2 | Pending |
+| TRAN-04 | Phase 2 | Pending |
+| TRAN-05 | Phase 2 | Pending |
+| BAL-01 | Phase 1 | Pending |
+| BAL-02 | Phase 1 | Pending |
+| BAL-03 | Phase 1 | Pending |
+| BAL-04 | Phase 1 | Pending |
+| AUTH-01 | Phase 1 | Pending |
+| AUTH-02 | Phase 1 | Pending |
+| AUTH-03 | Phase 1 | Pending |
+| AUTH-04 | Phase 1 | Pending |
+| AUTH-05 | Phase 1 | Pending |
+| VOIC-01 | Phase 3 | Pending |
+| VOIC-02 | Phase 3 | Pending |
+| VOIC-03 | Phase 3 | Pending |
+| VOIC-04 | Phase 3 | Pending |
+| VOIC-05 | Phase 3 | Pending |
+| VOIC-06 | Phase 3 | Pending |
+| VOIC-07 | Phase 3 | Pending |
+
+**Coverage:**
+- v1 requirements: 27 total
+- Mapped to phases: 27
+- Unmapped: 0
+
+---
+*Requirements defined: 2026-05-12*
+*Last updated: 2026-05-12 after initial definition*
