@@ -30,6 +30,10 @@
 
 **Requirements:** DASH-01, DASH-02, DASH-03, DASH-04, DASH-05, AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, BAL-01, BAL-02, BAL-03, BAL-04
 
+**Plans:**
+
+- [ ] 01-01-PLAN.md — Walking Skeleton: project scaffold, Supabase, auth, dashboard
+
 ---
 
 ## Phase 2: Expense Entry & Transactions
