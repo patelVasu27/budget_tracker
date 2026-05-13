@@ -1,5 +1,3 @@
-import type { Category } from '../types'
-
 interface BalanceCardProps {
   title: string
   amount: number

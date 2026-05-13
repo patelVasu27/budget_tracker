@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 import { BalanceCard } from '../components/BalanceCard'
 import { TransactionList } from '../components/TransactionList'
+import { AddExpenseModal } from '../components/AddExpenseModal'
 import type { Transaction, MonthlySettings } from '../types'
 
 export function Dashboard() {
@@ -14,6 +15,8 @@ export function Dashboard() {
   const [income, setIncome] = useState(0)
   const [editingIncome, setEditingIncome] = useState(false)
   const [newIncome, setNewIncome] = useState('')
+  const [showExpenseModal, setShowExpenseModal] = useState(false)
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
 
   const currentMonth = new Date().getMonth() + 1
   const currentYear = new Date().getFullYear()
@@ -74,6 +77,24 @@ export function Dashboard() {
       queryClient.invalidateQueries({ queryKey: ['monthlySettings'] })
     },
   })
+
+  const deleteTransactionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from('transactions').delete().eq('id', id)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    },
+  })
+
+  const handleEditTransaction = (transaction: Transaction) => {
+    setEditingTransaction(transaction)
+    setShowExpenseModal(true)
+  }
+
+  const handleDeleteTransaction = (transaction: Transaction) => {
+    deleteTransactionMutation.mutate(transaction.id)
+  }
 
   useEffect(() => {
     if (settings?.income) {
@@ -162,17 +183,33 @@ export function Dashboard() {
           <div className="md:w-2/3">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold text-gray-800">Recent Expenses</h2>
-              <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                <Plus className="w-4 h-4" />
-                Add Expense
-              </button>
+              <button 
+              onClick={() => setShowExpenseModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              <Plus className="w-4 h-4" />
+              Add Expense
+            </button>
             </div>
 
             <div className="bg-white rounded-xl shadow-sm p-4">
-              <TransactionList transactions={transactions} />
+              <TransactionList 
+                transactions={transactions} 
+                onEdit={handleEditTransaction}
+                onDelete={handleDeleteTransaction}
+              />
             </div>
           </div>
         </div>
+
+        <AddExpenseModal 
+          isOpen={showExpenseModal} 
+          onClose={() => {
+            setShowExpenseModal(false)
+            setEditingTransaction(null)
+          }}
+          editTransaction={editingTransaction}
+        />
       </main>
     </div>
   )

@@ -8,7 +8,7 @@ interface AuthState {
   isLoading: boolean
   setSession: (session: Session | null) => void
   clearSession: () => void
-  initialize: () => Promise<void>
+  initialize: () => Promise<(() => void) | undefined>
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
