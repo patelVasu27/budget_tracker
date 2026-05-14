@@ -38,35 +38,37 @@ export function BalanceCard({ title, amount, variant }: BalanceCardProps) {
   const getIcon = () => {
     if (variant === 'income') {
       return (
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
         </svg>
       )
     }
     if (variant === 'expense') {
       return (
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
         </svg>
       )
     }
     return (
-      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     )
   }
 
+  const formattedAmount = `₹${Math.abs(amount).toFixed(2)}`
+
   return (
-    <div className={`card p-4 ${styles.bg}`}>
+    <div className={`card p-4 ${styles.bg}`} role="region" aria-label={`${title} — ${formattedAmount}`}>
       <div className="flex items-center justify-between">
         <div className={`p-2 rounded-lg ${styles.icon}`}>
           <span className={styles.iconBg}>{getIcon()}</span>
         </div>
       </div>
       <p className="text-xs text-secondary mt-3 font-medium">{title}</p>
-       <p className={`text-xl font-semibold mt-1 ${styles.text}`}>
-         ₹{Math.abs(amount).toFixed(2)}
+       <p className={`text-xl font-semibold mt-1 ${styles.text}`} aria-label={formattedAmount}>
+         {formattedAmount}
        </p>
     </div>
   )

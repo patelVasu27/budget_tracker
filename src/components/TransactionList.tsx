@@ -33,9 +33,9 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
 
   if (transactions.length === 0) {
     return (
-      <div className="text-center py-16">
+      <div className="text-center py-16" role="status" aria-label="No expenses yet">
         <div className="w-16 h-16 mx-auto mb-4 bg-primary/[0.03] rounded-2xl flex items-center justify-center">
-          <svg className="w-8 h-8 text-secondary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <svg className="w-8 h-8 text-secondary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
           </svg>
         </div>
@@ -61,13 +61,14 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" role="list" aria-label="Transaction list">
       {transactions.map((tx) => (
         <div
           key={tx.id}
           className="group flex items-center gap-4 p-3 rounded-xl hover:bg-primary/[0.02] transition-colors duration-150"
+          role="listitem"
         >
-          <div className="flex-shrink-0 w-10 h-10 bg-primary/[0.03] rounded-xl flex items-center justify-center text-lg">
+          <div className="flex-shrink-0 w-10 h-10 bg-primary/[0.03] rounded-xl flex items-center justify-center text-lg" aria-hidden="true">
             {CATEGORY_ICONS[tx.category as Category] || '📦'}
           </div>
           
@@ -80,17 +81,17 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
           </div>
 
           <div className="flex items-center gap-2">
-             <span className="font-semibold text-accent-red tabular-nums">
-               -₹{tx.amount.toFixed(2)}
+             <span className="font-semibold text-accent-red tabular-nums" aria-label={`Minus ₹${tx.amount.toFixed(2)}`}>
+                -₹{tx.amount.toFixed(2)}
              </span>
             
             {onEdit && (
               <button
                 onClick={() => onEdit(tx)}
                 className="p-2 text-secondary/40 hover:text-primary hover:bg-primary/5 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
-                title="Edit"
+                aria-label={`Edit ${tx.category} expense`}
               >
-                <Pencil className="w-4 h-4" />
+                <Pencil className="w-4 h-4" aria-hidden="true" />
               </button>
             )}
             
@@ -102,12 +103,13 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
                     ? 'bg-accent-red text-white'
                     : 'text-secondary/40 hover:text-accent-red hover:bg-accent-red/5 opacity-0 group-hover:opacity-100'
                 }`}
-                title={deletingId === tx.id ? 'Click again to confirm' : 'Delete'}
+                aria-label={deletingId === tx.id ? `Confirm delete ${tx.category} expense` : `Delete ${tx.category} expense`}
+                aria-pressed={deletingId === tx.id}
               >
                 {deletingId === tx.id ? (
-                  <Check className="w-4 h-4" />
+                  <Check className="w-4 h-4" aria-hidden="true" />
                 ) : (
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-4 h-4" aria-hidden="true" />
                 )}
               </button>
             )}

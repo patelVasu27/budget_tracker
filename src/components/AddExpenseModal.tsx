@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { X } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { format } from 'date-fns'
@@ -46,6 +46,51 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
   })
 
   const selectedCategory = watch('category')
+  const modalRef = useRef<HTMLDivElement>(null)
+  const firstFocusableRef = useRef<HTMLInputElement>(null)
+
+  // Focus trap within modal when open
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      onClose()
+      return
+    }
+    if (e.key !== 'Tab' || !modalRef.current) return
+
+    const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
+      'button, input, [tabindex]:not([tabindex="-1"])'
+    )
+    if (focusableElements.length === 0) return
+
+    const firstElement = focusableElements[0]
+    const lastElement = focusableElements[focusableElements.length - 1]
+
+    if (e.shiftKey) {
+      if (document.activeElement === firstElement) {
+        e.preventDefault()
+        lastElement.focus()
+      }
+    } else {
+      if (document.activeElement === lastElement) {
+        e.preventDefault()
+        firstElement.focus()
+      }
+    }
+  }, [onClose])
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown)
+      // Focus first input on open
+      setTimeout(() => firstFocusableRef.current?.focus(), 50)
+      // Prevent background scroll
+      document.body.style.overflow = 'hidden'
+    }
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = ''
+    }
+  }, [isOpen, handleKeyDown])
 
   useEffect(() => {
     if (editTransaction) {
@@ -123,21 +168,28 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="expense-modal-heading"
+      aria-describedby="expense-modal-subtitle"
+    >
       <div className="absolute inset-0 bg-primary/20 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-      <div className="relative bg-surface rounded-2xl shadow-modal w-full max-w-md p-6 animate-scale-in">
+      <div ref={modalRef} className="relative bg-surface rounded-2xl shadow-modal w-full max-w-md p-6 animate-scale-in">
         <button 
           onClick={onClose} 
           className="absolute top-4 right-4 p-2 text-secondary hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
+          aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>
 
         <div className="mb-6">
-          <h2 className="text-xl font-semibold text-primary">
+          <h2 id="expense-modal-heading" className="text-xl font-semibold text-primary">
             {editTransaction ? 'Edit Expense' : 'Add Expense'}
           </h2>
-          <p className="text-sm text-secondary mt-1">
+          <p id="expense-modal-subtitle" className="text-sm text-secondary mt-1">
             {editTransaction ? 'Update the details below' : 'Fill in the details to add an expense'}
           </p>
         </div>
@@ -153,14 +205,18 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
                 {...register('amount', { required: 'Amount is required', min: '0.01' })}
                 className="input-field pl-8"
                 placeholder="0.00"
+                ref={firstFocusableRef}
+                aria-label="Expense amount"
+                aria-required="true"
+                aria-invalid={!!errors.amount}
               />
             </div>
-            {errors.amount && <p className="text-sm text-accent-red mt-1">{errors.amount.message}</p>}
+            {errors.amount && <p className="text-sm text-accent-red mt-1" role="alert">{errors.amount.message}</p>}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-primary mb-2">Category</label>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-4 gap-2" role="radiogroup" aria-label="Select category">
               {CATEGORIES.map((cat) => (
                 <label
                   key={cat}
@@ -177,6 +233,7 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
                     {...register('category')}
                     value={cat}
                     className="sr-only"
+                    aria-label={cat}
                   />
                 </label>
               ))}
@@ -189,6 +246,8 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
               type="date"
               {...register('date', { required: true })}
               className="input-field"
+              aria-label="Expense date"
+              aria-required="true"
             />
           </div>
 
@@ -201,11 +260,12 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
               {...register('note')}
               className="input-field"
               placeholder="Add a note..."
+              aria-label="Optional note"
             />
           </div>
 
           {error && (
-            <div className="p-3 bg-accent-red/10 text-accent-red rounded-lg text-sm">
+            <div className="p-3 bg-accent-red/10 text-accent-red rounded-lg text-sm" role="alert" aria-live="polite">
               {error}
             </div>
           )}
@@ -215,12 +275,14 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
               type="button"
               onClick={onClose}
               className="btn-secondary flex-1"
+              aria-label="Cancel and close"
             >
               Cancel
             </button>
             <button
               type="submit"
               className="btn-primary flex-1"
+              aria-label={editTransaction ? 'Save changes' : 'Add expense'}
             >
               {editTransaction ? 'Save Changes' : 'Add Expense'}
             </button>

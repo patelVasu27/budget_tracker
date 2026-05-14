@@ -47,10 +47,11 @@ export function VoiceMicButton({ onResult, onError: _onError, isDisabled }: Voic
         <button
           disabled
           className="p-3 rounded-xl bg-gray-100 text-gray-400 cursor-not-allowed"
-          aria-label="Voice input not supported in your browser"
+          aria-label="Voice input not available"
+          aria-disabled="true"
           title="Voice input not supported in your browser"
         >
-          <MicOff className="w-5 h-5" />
+          <MicOff className="w-5 h-5" aria-hidden="true" />
         </button>
         <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-primary text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
           Voice input not supported in your browser
@@ -66,10 +67,11 @@ export function VoiceMicButton({ onResult, onError: _onError, isDisabled }: Voic
         <button
           disabled
           className="p-3 rounded-xl bg-gray-100 text-amber-500 cursor-not-allowed"
-          aria-label="Microphone access denied"
+          aria-label="Voice input not available"
+          aria-disabled="true"
           title="Microphone access denied. Update browser settings to enable."
         >
-          <MicOff className="w-5 h-5" />
+          <MicOff className="w-5 h-5" aria-hidden="true" />
         </button>
         <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-primary text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
           Microphone access denied. Update browser settings to enable.
@@ -93,10 +95,12 @@ export function VoiceMicButton({ onResult, onError: _onError, isDisabled }: Voic
           ? 'bg-accent-red/10 text-accent-red animate-pulse-mic'
           : 'bg-primary/5 text-secondary hover:bg-primary/10 hover:text-primary'
       }`}
-      title={isListening ? 'Release to stop' : 'Press and hold to record'}
-      aria-label={isListening ? 'Recording - release to stop' : 'Press and hold to record'}
+      role="button"
+      aria-pressed={isListening}
+      aria-disabled={isDisabled || undefined}
+      aria-label={isListening ? 'Recording... press again to stop' : 'Record expense by voice'}
     >
-      <Mic className={`w-5 h-5 transition-transform duration-200 ${isListening ? 'scale-110' : ''}`} />
+      <Mic className={`w-5 h-5 transition-transform duration-200 ${isListening ? 'scale-110' : ''}`} aria-hidden="true" />
     </button>
   )
 }

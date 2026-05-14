@@ -44,7 +44,7 @@ export function Dashboard() {
     enabled: !!user,
   })
 
-  const { data: transactions = [] } = useQuery<Transaction[]>({
+  const { data: transactions = [], isPending: isLoadingTransactions } = useQuery<Transaction[]>({
     queryKey: ['transactions', user?.id, currentMonth, currentYear],
     queryFn: async () => {
       if (!user) return []
@@ -159,7 +159,7 @@ export function Dashboard() {
         <div className="max-w-5xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary/5 rounded-lg">
-              <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
@@ -171,16 +171,17 @@ export function Dashboard() {
           <button
             onClick={handleLogout}
             className="flex items-center gap-2 px-3 py-2 text-sm text-secondary hover:text-primary hover:bg-surface-elevated rounded-lg transition-colors"
+            aria-label="Log out of your account"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-4 h-4" aria-hidden="true" />
             <span className="hidden sm:inline">Logout</span>
           </button>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-8">
+      <main className="max-w-5xl mx-auto px-6 py-8" aria-label="Dashboard">
         <div className="grid md:grid-cols-[320px_1fr] gap-8">
-          <aside className="space-y-4">
+          <aside className="space-y-4" aria-label="Monthly balance summary">
             <h2 className="text-sm font-medium text-secondary uppercase tracking-wide">Balance</h2>
             
             {editingIncome ? (
@@ -212,14 +213,24 @@ export function Dashboard() {
                   setNewIncome(income.toString())
                   setEditingIncome(true)
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setNewIncome(income.toString())
+                    setEditingIncome(true)
+                  }
+                }}
                 className="card p-5 cursor-pointer hover:shadow-elevated transition-all duration-200 group"
+                role="button"
+                tabIndex={0}
+                aria-label="Set monthly income"
               >
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs text-secondary mb-1">Tap to set income</p>
                     <p className="text-2xl font-semibold text-primary">₹{income.toFixed(2)}</p>
                   </div>
-                  <Settings className="w-4 h-4 text-secondary/40 group-hover:text-secondary transition-colors" />
+                  <Settings className="w-4 h-4 text-secondary/40 group-hover:text-secondary transition-colors" aria-hidden="true" />
                 </div>
               </div>
             )}
@@ -231,12 +242,12 @@ export function Dashboard() {
             </div>
           </aside>
 
-          <section>
+          <section aria-label="Recent expenses">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-sm font-medium text-secondary uppercase tracking-wide">Recent Expenses</h2>
               <div className="flex items-center gap-2">
                 {voiceError && (
-                  <p className="text-xs text-accent-red max-w-48 text-right">{voiceError}</p>
+                  <p className="text-xs text-accent-red max-w-48 text-right" role="alert">{voiceError}</p>
                 )}
                 <VoiceMicButton
                   onResult={handleVoiceResult}
@@ -245,19 +256,36 @@ export function Dashboard() {
                 <button 
                   onClick={() => setShowExpenseModal(true)}
                   className="btn-primary flex items-center gap-2 text-sm"
+                  aria-label="Add a new expense"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-4 h-4" aria-hidden="true" />
                   Add Expense
                 </button>
               </div>
             </div>
 
             <div className="card p-4">
-              <TransactionList 
-                transactions={transactions} 
-                onEdit={handleEditTransaction}
-                onDelete={handleDeleteTransaction}
-              />
+              {isLoadingTransactions ? (
+                <div className="space-y-3" role="status" aria-label="Loading your data">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center gap-4 p-3 animate-pulse">
+                      <div className="w-10 h-10 bg-primary/5 rounded-xl" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-primary/5 rounded w-24" />
+                        <div className="h-3 bg-primary/5 rounded w-36" />
+                      </div>
+                      <div className="h-4 bg-primary/5 rounded w-16" />
+                    </div>
+                  ))}
+                  <span className="sr-only">Loading your data</span>
+                </div>
+              ) : (
+                <TransactionList 
+                  transactions={transactions} 
+                  onEdit={handleEditTransaction}
+                  onDelete={handleDeleteTransaction}
+                />
+              )}
             </div>
           </section>
         </div>
