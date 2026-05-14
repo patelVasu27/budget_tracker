@@ -99,7 +99,7 @@
 
 **Plans:** 1 plan
 
-- [ ] 03-01-PLAN.md — Voice parsing layer, hold-to-record mic button, modal pre-fill, error handling/retry
+- [x] 03-01-PLAN.md — Voice parsing layer, hold-to-record mic button, modal pre-fill, error handling/retry
 
 ---
 
