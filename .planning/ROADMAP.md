@@ -32,7 +32,30 @@
 
 **Plans:**
 
-- [ ] 01-01-PLAN.md — Walking Skeleton: project scaffold, Supabase, auth, dashboard
+- [x] 01-01-PLAN.md — Walking Skeleton: project scaffold, Supabase, auth, dashboard
+
+---
+
+## Phase 2: Expense Entry & Transactions
+
+**Goal:** Full expense CRUD with simple form and transaction list management.
+
+**Mode:** mvp
+
+**Success Criteria:**
+
+1. User can add expense with amount, category, optional note, date
+2. Expense saves to Supabase and dashboard updates instantly
+3. User can view chronological transaction list
+4. User can edit existing transaction (amount, category, note, date)
+5. User can delete transaction with confirmation prompt
+6. Balance recalculates correctly after any change
+
+**Requirements:** EXP-01, EXP-02, EXP-03, EXP-04, EXP-05, EXP-06, TRAN-01, TRAN-02, TRAN-03, TRAN-04, TRAN-05
+
+**Plans:**
+
+- [x] 02-01 — Pre-implemented during Phase 1 walking skeleton
 
 ---
 
@@ -71,6 +94,12 @@
 6. Graceful fallback if browser doesn't support Web Speech API
 
 **Requirements:** VOIC-01, VOIC-02, VOIC-03, VOIC-04, VOIC-05, VOIC-06, VOIC-07
+
+**Decisions:** D-18 through D-23 (see CONTEXT.md)
+
+**Plans:** 1 plan
+
+- [ ] 03-01-PLAN.md — Voice parsing layer, hold-to-record mic button, modal pre-fill, error handling/retry
 
 ---
 

@@ -108,7 +108,7 @@
 | AUTH-02 | Phase 1 | Complete |
 | AUTH-03 | Phase 1 | Complete |
 | AUTH-04 | Phase 1 | Complete |
-| AUTH-05 | Phase 1 | Complete (RLS script ready) |
+| AUTH-05 | Phase 1 | Complete |
 | VOIC-01 | Phase 3 | Pending |
 | VOIC-02 | Phase 3 | Pending |
 | VOIC-03 | Phase 3 | Pending |
