@@ -67,10 +67,12 @@ None — all security-relevant surfaces match the plan's threat model:
 
 | Check | Status | Notes |
 |-------|--------|-------|
-| `npx tsc --noEmit` | ❌ Fails | Pre-existing errors in `Dashboard.tsx` (unused variables from uncommitted Phase 3 changes) |
+| `npx tsc --noEmit` | ✅ Passes | Zero errors across all files |
 | `npx vitest run` | ✅ Passes | 16/16 tests pass |
-| `npm run build` | ❌ Fails | `tsc` step fails due to same pre-existing Dashboard.tsx issues |
+| `npm run build` | ✅ Passes | Clean production build (dist/index.html, assets) |
 | File existence | ✅ Passes | All 5 expected files created/updated |
+
+> **Note:** Initial build failures were caused by pre-existing TypeScript errors in `src/features/Dashboard.tsx` (unused destructured variables from uncommitted Phase 3 work). These were resolved by the companion a11y polish commit (`ad4b3e7`) made between plan executions. The deferred-items.md has been updated accordingly.
 
 ### Self-Check
 

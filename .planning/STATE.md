@@ -45,7 +45,7 @@ See: .planning/PROJECT.md (updated 2026-05-12)
 
 ## Notes
 
-- Pre-existing TypeScript errors in Dashboard.tsx (unused variables from Phase 3 uncommitted work) are logged in `deferred-items.md`. Build (`npm run build`) fails due to these, but individual checks (`npx tsc --noEmit` on clean files, `npx vitest run`) pass.
+- Pre-existing TypeScript errors in Dashboard.tsx (unused variables from Phase 3 uncommitted work) logged in `deferred-items.md` were resolved by companion a11y commit `ad4b3e7`. All verification checks now pass.
 
 ---
 *Last updated: 2026-05-14 after Phase 4 Plan 1 execution*

@@ -10,3 +10,4 @@
 - **Found during:** Plan 04-01, Task 3 verification.
 - **Not fixed because:** Out of scope — file was not created or modified by this plan.
 - **Should be fixed by:** Plan 04-02 (a11y/polish) which already modifies Dashboard.tsx, or a dedicated follow-up.
+- **RESOLVED:** Commit `ad4b3e7` (a11y polish) resolved the unused variable errors as part of its Dashboard.tsx modifications.
