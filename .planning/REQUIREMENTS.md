@@ -47,13 +47,13 @@
 
 ### Voice Entry
 
-- [ ] **VOIC-01**: User can tap microphone to start voice input
-- [ ] **VOIC-02**: Browser requests microphone permission on first use
-- [ ] **VOIC-03**: System extracts amount from speech
-- [ ] **VOIC-04**: System matches category from keywords
-- [ ] **VOIC-05**: Form pre-fills with extracted data
-- [ ] **VOIC-06**: User must confirm before saving (no auto-save)
-- [ ] **VOIC-07**: Graceful fallback if browser doesn't support Web Speech API
+- [x] **VOIC-01**: User can tap microphone to start voice input
+- [x] **VOIC-02**: Browser requests microphone permission on first use
+- [x] **VOIC-03**: System extracts amount from speech
+- [x] **VOIC-04**: System matches category from keywords
+- [x] **VOIC-05**: Form pre-fills with extracted data
+- [x] **VOIC-06**: User must confirm before saving (no auto-save)
+- [x] **VOIC-07**: Graceful fallback if browser doesn't support Web Speech API
 
 ## v2 Requirements
 
@@ -109,13 +109,13 @@
 | AUTH-03 | Phase 1 | Complete |
 | AUTH-04 | Phase 1 | Complete |
 | AUTH-05 | Phase 1 | Complete |
-| VOIC-01 | Phase 3 | Pending |
-| VOIC-02 | Phase 3 | Pending |
-| VOIC-03 | Phase 3 | Pending |
-| VOIC-04 | Phase 3 | Pending |
-| VOIC-05 | Phase 3 | Pending |
-| VOIC-06 | Phase 3 | Pending |
-| VOIC-07 | Phase 3 | Pending |
+| VOIC-01 | Phase 3 | Complete |
+| VOIC-02 | Phase 3 | Complete |
+| VOIC-03 | Phase 3 | Complete |
+| VOIC-04 | Phase 3 | Complete |
+| VOIC-05 | Phase 3 | Complete |
+| VOIC-06 | Phase 3 | Complete |
+| VOIC-07 | Phase 3 | Complete |
 
 **Coverage:**
 - v1 requirements: 27 total
