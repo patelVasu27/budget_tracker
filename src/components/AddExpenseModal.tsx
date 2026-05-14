@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { format } from 'date-fns'
@@ -11,6 +11,7 @@ interface AddExpenseModalProps {
   isOpen: boolean
   onClose: () => void
   editTransaction?: Transaction | null
+  voicePrefill?: { amount: number; category: string; note: string } | null
 }
 
 interface ExpenseForm {
@@ -20,19 +21,56 @@ interface ExpenseForm {
   date: string
 }
 
-export function AddExpenseModal({ isOpen, onClose, editTransaction }: AddExpenseModalProps) {
+const CATEGORY_ICONS: Record<Category, string> = {
+  Food: '🍽️',
+  Transport: '🚗',
+  Utilities: '💡',
+  Entertainment: '🎬',
+  Shopping: '🛍️',
+  Health: '💊',
+  Other: '📦',
+}
+
+export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill }: AddExpenseModalProps) {
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
   const [error, setError] = useState('')
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<ExpenseForm>({
+  const { register, handleSubmit, formState: { errors }, reset, watch } = useForm<ExpenseForm>({
     defaultValues: {
-      amount: editTransaction?.amount.toString() || '',
-      category: editTransaction?.category as Category || 'Food',
-      note: editTransaction?.note || '',
-      date: editTransaction?.date || format(new Date(), 'yyyy-MM-dd'),
+      amount: '',
+      category: 'Food' as Category,
+      note: '',
+      date: format(new Date(), 'yyyy-MM-dd'),
     }
   })
+
+  const selectedCategory = watch('category')
+
+  useEffect(() => {
+    if (editTransaction) {
+      reset({
+        amount: editTransaction.amount.toString(),
+        category: editTransaction.category as Category,
+        note: editTransaction.note || '',
+        date: editTransaction.date,
+      })
+    } else if (voicePrefill) {
+      reset({
+        amount: voicePrefill.amount.toString(),
+        category: voicePrefill.category as Category,
+        note: voicePrefill.note,
+        date: format(new Date(), 'yyyy-MM-dd'),
+      })
+    } else {
+      reset({
+        amount: '',
+        category: 'Food',
+        note: '',
+        date: format(new Date(), 'yyyy-MM-dd'),
+      })
+    }
+  }, [editTransaction, voicePrefill, reset, isOpen])
 
   const addMutation = useMutation({
     mutationFn: async (data: ExpenseForm) => {
@@ -85,76 +123,106 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction }: AddExpense
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl w-full max-w-md p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-primary/20 backdrop-blur-sm animate-fade-in" onClick={onClose} />
+      <div className="relative bg-surface rounded-2xl shadow-modal w-full max-w-md p-6 animate-scale-in">
+        <button 
+          onClick={onClose} 
+          className="absolute top-4 right-4 p-2 text-secondary hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold text-primary">
             {editTransaction ? 'Edit Expense' : 'Add Expense'}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X className="w-5 h-5" />
-          </button>
+          <p className="text-sm text-secondary mt-1">
+            {editTransaction ? 'Update the details below' : 'Fill in the details to add an expense'}
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Amount</label>
-            <input
-              type="number"
-              step="0.01"
-              {...register('amount', { required: 'Amount is required', min: '0.01' })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-              placeholder="0.00"
-            />
-            {errors.amount && <p className="text-red-500 text-sm mt-1">{errors.amount.message}</p>}
+            <label className="block text-sm font-medium text-primary mb-2">Amount</label>
+            <div className="relative">
+               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary">₹</span>
+              <input
+                type="number"
+                step="0.01"
+                {...register('amount', { required: 'Amount is required', min: '0.01' })}
+                className="input-field pl-8"
+                placeholder="0.00"
+              />
+            </div>
+            {errors.amount && <p className="text-sm text-accent-red mt-1">{errors.amount.message}</p>}
           </div>
 
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Category</label>
-            <select
-              {...register('category', { required: true })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-            >
+            <label className="block text-sm font-medium text-primary mb-2">Category</label>
+            <div className="grid grid-cols-4 gap-2">
               {CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
+                <label
+                  key={cat}
+                  className={`flex flex-col items-center gap-1 p-3 rounded-xl cursor-pointer transition-all duration-150 border-2 ${
+                    selectedCategory === cat
+                      ? 'border-primary bg-primary/5'
+                      : 'border-transparent hover:bg-primary/[0.03]'
+                  }`}
+                >
+                  <span className="text-xl">{CATEGORY_ICONS[cat]}</span>
+                  <span className="text-xs text-secondary">{cat}</span>
+                  <input
+                    type="radio"
+                    {...register('category')}
+                    value={cat}
+                    className="sr-only"
+                  />
+                </label>
               ))}
-            </select>
+            </div>
           </div>
 
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Date</label>
+            <label className="block text-sm font-medium text-primary mb-2">Date</label>
             <input
               type="date"
               {...register('date', { required: true })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              className="input-field"
             />
           </div>
 
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Note (optional)</label>
+            <label className="block text-sm font-medium text-primary mb-2">
+              Note <span className="text-secondary font-normal">(optional)</span>
+            </label>
             <input
               type="text"
               {...register('note')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              className="input-field"
               placeholder="Add a note..."
             />
           </div>
 
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error && (
+            <div className="p-3 bg-accent-red/10 text-accent-red rounded-lg text-sm">
+              {error}
+            </div>
+          )}
 
           <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="btn-secondary flex-1"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="btn-primary flex-1"
             >
-              {editTransaction ? 'Save' : 'Add Expense'}
+              {editTransaction ? 'Save Changes' : 'Add Expense'}
             </button>
           </div>
         </form>
