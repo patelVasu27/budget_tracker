@@ -55,6 +55,12 @@
 - [x] **VOIC-06**: User must confirm before saving (no auto-save)
 - [x] **VOIC-07**: Graceful fallback if browser doesn't support Web Speech API
 
+### Infrastructure & Deployment
+
+- [x] **POL-01**: App catches render errors and shows fallback UI instead of white screen
+- [x] **POL-03**: Pushing to main runs TypeScript check and all tests
+- [x] **POL-04**: Merging to main auto-deploys to Vercel
+
 ## v2 Requirements
 
 ### History
@@ -116,10 +122,13 @@
 | VOIC-05 | Phase 3 | Complete |
 | VOIC-06 | Phase 3 | Complete |
 | VOIC-07 | Phase 3 | Complete |
+| POL-01 | Phase 4 | Complete |
+| POL-03 | Phase 4 | Complete |
+| POL-04 | Phase 4 | Complete |
 
 **Coverage:**
-- v1 requirements: 27 total
-- Mapped to phases: 27
+- v1 requirements: 30 total
+- Mapped to phases: 30
 - Unmapped: 0
 
 ---

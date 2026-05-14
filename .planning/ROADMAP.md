@@ -116,7 +116,11 @@
 3. Supabase project configured for production
 4. GitHub Actions CI/CD working
 
-**Requirements:** TBD
+**Requirements:** POL-01, POL-03, POL-04
+
+**Plans:**
+
+- [x] 04-01-PLAN.md — Infrastructure foundation: ErrorBoundary, CI/CD pipeline, vercel.json, .env.example
 
 ---
 
