@@ -28,18 +28,18 @@ See: .planning/PROJECT.md (updated 2026-05-12)
 
 | Metric | Value |
 |--------|-------|
-| Phase | 4 (In Progress) |
+| Phase | 4 (Complete — all phases done) |
 | Requirements | 27 total (27 complete) |
-| Plans | 1 total (1 complete, 0 planned) |
+| Plans | 6 total (6 complete) |
 
 ## Recent Activity
 
 - 2026-05-12: Project initialized with 4 phases, 27 requirements
 - 2026-05-12: Phase 1 planned and completed — walking skeleton with auth + dashboard
 - 2026-05-14: Phase 2 recognized as pre-implemented (EXP + TRAN built in Phase 1)
-- 2026-05-14: Phase 3 discussion, research, planning, and execution completed
 - 2026-05-14: Phase 3 voice entry built — hold-to-record mic, amount parser, category matcher, modal pre-fill
-- 2026-05-14: 16/16 tests passing, TypeScript zero errors, production build successful
+- 2026-05-14: Phase 4 — ErrorBoundary, CI/CD, Vercel config, full a11y audit, meta tags, README
+- 2026-05-14: All 4 phases complete — app ready for launch
 - 2026-05-14: Phase 3 Plan 1 executed — voice-to-expense via Web Speech API
 - 2026-05-14: Phase 4 Plan 1 executed — ErrorBoundary, CI/CD pipeline, vercel.json, .env.example
 
