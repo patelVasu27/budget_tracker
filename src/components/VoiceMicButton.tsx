@@ -8,12 +8,13 @@ interface VoiceMicButtonProps {
   isDisabled?: boolean
 }
 
-export function VoiceMicButton({ onResult, onError: _onError, isDisabled }: VoiceMicButtonProps) {
+export function VoiceMicButton({ onResult, onError, isDisabled }: VoiceMicButtonProps) {
   const {
     transcript,
     isListening,
     isSupported,
     isMicAvailable,
+    voiceError,
     toggleRecording,
   } = useVoiceCommand()
 
@@ -27,6 +28,12 @@ export function VoiceMicButton({ onResult, onError: _onError, isDisabled }: Voic
     lastTranscriptRef.current = transcript
     wasListeningRef.current = isListening
   }, [isListening, transcript, onResult])
+
+  useEffect(() => {
+    if (voiceError) {
+      onError(voiceError)
+    }
+  }, [voiceError, onError])
 
   if (!isSupported) {
     return (

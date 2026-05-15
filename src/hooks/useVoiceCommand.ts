@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
 
 export interface UseVoiceCommandReturn {
@@ -5,10 +6,13 @@ export interface UseVoiceCommandReturn {
   isListening: boolean
   isSupported: boolean
   isMicAvailable: boolean
+  voiceError: string | null
   toggleRecording: () => void
 }
 
 export function useVoiceCommand(): UseVoiceCommandReturn {
+  const [voiceError, setVoiceError] = useState<string | null>(null)
+
   const {
     transcript,
     listening,
@@ -21,8 +25,14 @@ export function useVoiceCommand(): UseVoiceCommandReturn {
     if (listening) {
       SpeechRecognition.stopListening()
     } else {
+      setVoiceError(null)
       resetTranscript()
-      SpeechRecognition.startListening({ continuous: false, language: 'en-US' })
+      try {
+        SpeechRecognition.startListening({ continuous: false, language: 'en-US' })
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Voice recording failed to start'
+        setVoiceError(message)
+      }
     }
   }
 
@@ -31,6 +41,7 @@ export function useVoiceCommand(): UseVoiceCommandReturn {
     isListening: listening,
     isSupported: browserSupportsSpeechRecognition,
     isMicAvailable: isMicrophoneAvailable,
+    voiceError,
     toggleRecording,
   }
 }
