@@ -4,7 +4,7 @@ import { AuthModal } from './components/AuthModal'
 import { Dashboard } from './features/Dashboard'
 
 function App() {
-  const { user, isLoading, initialize } = useAuthStore()
+  const { user, isLoading, isGuest, initialize, setGuestMode } = useAuthStore()
   const [showAuthModal, setShowAuthModal] = useState(false)
 
   useEffect(() => {
@@ -15,16 +15,17 @@ function App() {
   }, [initialize])
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!isLoading && !user && !isGuest) {
       setShowAuthModal(true)
     }
-  }, [isLoading, user])
+  }, [isLoading, user, isGuest])
 
   const handleAuthSuccess = () => {
     setShowAuthModal(false)
   }
 
   const handleGuestContinue = () => {
+    setGuestMode(true)
     setShowAuthModal(false)
   }
 
@@ -39,7 +40,7 @@ function App() {
     )
   }
 
-  if (!user) {
+  if (!user && !isGuest) {
     return (
       <>
         <div className="min-h-screen bg-background relative overflow-hidden">
