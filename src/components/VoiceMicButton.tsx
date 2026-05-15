@@ -8,27 +8,15 @@ interface VoiceMicButtonProps {
   isDisabled?: boolean
 }
 
-/**
- * Hold-to-record microphone button with three render states:
- *
- * 1. Unsupported browser (D-23) — disabled button with tooltip
- * 2. Mic permission denied (D-21) — disabled with amber tooltip
- * 3. Active hold-to-record (D-18) — press and hold to record, release to stop
- *
- * Handles both mouse and touch events for cross-device compatibility (Pitfall 3).
- */
 export function VoiceMicButton({ onResult, onError: _onError, isDisabled }: VoiceMicButtonProps) {
   const {
     transcript,
     isListening,
     isSupported,
     isMicAvailable,
-    startRecording,
-    stopRecording,
-    abortRecording,
+    toggleRecording,
   } = useVoiceCommand()
 
-  // React to transcript changes after recording stops (Pitfall 1)
   const wasListeningRef = useRef(false)
   const lastTranscriptRef = useRef('')
 
@@ -40,7 +28,6 @@ export function VoiceMicButton({ onResult, onError: _onError, isDisabled }: Voic
     wasListeningRef.current = isListening
   }, [isListening, transcript, onResult])
 
-  // D-23: Not supported — show disabled button with tooltip
   if (!isSupported) {
     return (
       <div className="relative group">
@@ -60,7 +47,6 @@ export function VoiceMicButton({ onResult, onError: _onError, isDisabled }: Voic
     )
   }
 
-  // D-21: Mic permission denied
   if (!isMicAvailable) {
     return (
       <div className="relative group">
@@ -80,42 +66,33 @@ export function VoiceMicButton({ onResult, onError: _onError, isDisabled }: Voic
     )
   }
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    e.preventDefault()
-    startRecording()
-  }
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    e.preventDefault()
-    stopRecording()
-  }
-
   return (
-    <button
-      onMouseDown={(e) => {
-        e.preventDefault()
-        startRecording()
-      }}
-      onMouseUp={(e) => {
-        e.preventDefault()
-        stopRecording()
-      }}
-      onMouseLeave={abortRecording}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={abortRecording}
-      disabled={isDisabled}
-      className={`p-3 rounded-xl transition-all duration-200 ${
+    <div className="relative group">
+      <button
+        onClick={(e) => {
+          e.preventDefault()
+          toggleRecording()
+        }}
+        disabled={isDisabled}
+        className={`p-3 rounded-xl transition-all duration-200 ${
+          isListening
+            ? 'bg-accent-red/10 text-accent-red animate-pulse-mic'
+            : 'bg-primary/5 text-secondary hover:bg-primary/10 hover:text-primary'
+        }`}
+        role="button"
+        aria-pressed={isListening}
+        aria-disabled={isDisabled || undefined}
+        aria-label={isListening ? 'Tap to stop recording' : 'Tap to record expense by voice'}
+      >
+        <Mic className={`w-5 h-5 transition-transform duration-200 ${isListening ? 'scale-110' : ''}`} aria-hidden="true" />
+      </button>
+      <div className={`absolute top-full mt-1.5 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md text-[10px] font-medium whitespace-nowrap pointer-events-none transition-all duration-200 ${
         isListening
-          ? 'bg-accent-red/10 text-accent-red animate-pulse-mic'
-          : 'bg-primary/5 text-secondary hover:bg-primary/10 hover:text-primary'
-      }`}
-      role="button"
-      aria-pressed={isListening}
-      aria-disabled={isDisabled || undefined}
-      aria-label={isListening ? 'Recording... press again to stop' : 'Record expense by voice'}
-    >
-      <Mic className={`w-5 h-5 transition-transform duration-200 ${isListening ? 'scale-110' : ''}`} aria-hidden="true" />
-    </button>
+          ? 'bg-accent-red/10 text-accent-red opacity-100'
+          : 'bg-primary/5 text-secondary opacity-0 group-hover:opacity-100'
+      }`}>
+        {isListening ? 'Listening... tap to stop' : 'Tap to record'}
+      </div>
+    </div>
   )
 }

@@ -5,14 +5,9 @@ export interface UseVoiceCommandReturn {
   isListening: boolean
   isSupported: boolean
   isMicAvailable: boolean
-  startRecording: () => void
-  stopRecording: () => void
-  abortRecording: () => void
+  toggleRecording: () => void
 }
 
-/**
- * Custom hook wrapping react-speech-recognition with hold-to-record semantics.
- */
 export function useVoiceCommand(): UseVoiceCommandReturn {
   const {
     transcript,
@@ -24,18 +19,13 @@ export function useVoiceCommand(): UseVoiceCommandReturn {
     stopListening,
   } = useSpeechRecognitionOrig()
 
-  const startRecording = () => {
-    resetTranscript()
-    startListening({ continuous: false, language: 'en-US' })
-  }
-
-  const stopRecording = () => {
-    stopListening()
-  }
-
-  const abortRecording = () => {
-    stopListening()
-    resetTranscript()
+  const toggleRecording = () => {
+    if (listening) {
+      stopListening()
+    } else {
+      resetTranscript()
+      startListening({ continuous: false, language: 'en-US' })
+    }
   }
 
   return {
@@ -43,8 +33,6 @@ export function useVoiceCommand(): UseVoiceCommandReturn {
     isListening: listening,
     isSupported: browserSupportsSpeechRecognition,
     isMicAvailable: isMicrophoneAvailable,
-    startRecording,
-    stopRecording,
-    abortRecording,
+    toggleRecording,
   }
 }
