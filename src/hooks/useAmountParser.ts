@@ -49,20 +49,31 @@ export function parseAmount(text: string): number | null {
   let total = 0
   let current = 0
   let foundNumber = false
+  let prevNum = 0
+  let prevIsNum = false
 
   for (const word of words) {
     if (word === 'and') continue
 
     if (WORD_MAP[word] !== undefined) {
-      current += WORD_MAP[word]
+      const num = WORD_MAP[word]
+      if (prevIsNum && prevNum < 10 && num >= 10 && num < 100) {
+        current = current - prevNum + (prevNum * 100 + num)
+      } else {
+        current += num
+      }
+      prevNum = num
+      prevIsNum = true
       foundNumber = true
     } else if (SCALE_MAP[word] !== undefined) {
+      prevIsNum = false
       current = current === 0 ? SCALE_MAP[word] : current * SCALE_MAP[word]
       foundNumber = true
     } else {
       // Non-number word; flush current accumulator
       total += current
       current = 0
+      prevIsNum = false
     }
   }
   total += current
