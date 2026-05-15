@@ -8,7 +8,10 @@ function App() {
   const [showAuthModal, setShowAuthModal] = useState(false)
 
   useEffect(() => {
-    initialize()
+    const cleanup = initialize()
+    return () => {
+      cleanup?.then(fn => fn?.())
+    }
   }, [initialize])
 
   useEffect(() => {
