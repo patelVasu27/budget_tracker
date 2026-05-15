@@ -19,7 +19,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>()
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<FormData>()
   const modalRef = useRef<HTMLDivElement>(null)
   const firstFocusableRef = useRef<HTMLInputElement>(null)
 
@@ -181,6 +181,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
             onClick={() => {
               setIsLogin(!isLogin)
               setError(null)
+              reset()
             }}
             className="text-blue-600 hover:text-blue-700 font-medium"
             aria-label={isLogin ? 'Switch to sign up' : 'Switch to log in'}
