@@ -19,13 +19,11 @@ export function VoiceMicButton({ onResult, onError, isDisabled }: VoiceMicButton
   } = useVoiceCommand()
 
   const wasListeningRef = useRef(false)
-  const lastTranscriptRef = useRef('')
 
   useEffect(() => {
-    if (wasListeningRef.current && !isListening && transcript && transcript !== lastTranscriptRef.current) {
+    if (wasListeningRef.current && !isListening && transcript) {
       onResult(transcript)
     }
-    lastTranscriptRef.current = transcript
     wasListeningRef.current = isListening
   }, [isListening, transcript, onResult])
 
