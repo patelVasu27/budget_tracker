@@ -107,7 +107,13 @@ export function Dashboard() {
       return
     }
     const { bestGuess } = matchCategory(transcript)
-    setVoicePrefill({ amount, category: bestGuess, note: transcript })
+    const note = transcript
+      .replace(/\d+(?:\.\d{1,2})?/g, '')
+      .replace(/[₹₨]/g, '')
+      .replace(/\b(?:rs\.?|rupees?|inr)\b\s*\d+/gi, '')
+      .replace(/\b\d+\s*(?:rs\.?|rupees?|inr)\b/gi, '')
+      .replace(/\s+/g, ' ').trim()
+    setVoicePrefill({ amount, category: bestGuess, note })
     setShowExpenseModal(true)
     setRetryCount(0)
   }
