@@ -1,4 +1,4 @@
-import { useSpeechRecognition as useSpeechRecognitionOrig } from 'react-speech-recognition'
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
 
 export interface UseVoiceCommandReturn {
   transcript: string
@@ -15,16 +15,14 @@ export function useVoiceCommand(): UseVoiceCommandReturn {
     browserSupportsSpeechRecognition,
     isMicrophoneAvailable,
     resetTranscript,
-    startListening,
-    stopListening,
-  } = useSpeechRecognitionOrig()
+  } = useSpeechRecognition()
 
   const toggleRecording = () => {
     if (listening) {
-      stopListening()
+      SpeechRecognition.stopListening()
     } else {
       resetTranscript()
-      startListening({ continuous: false, language: 'en-US' })
+      SpeechRecognition.startListening({ continuous: false, language: 'en-US' })
     }
   }
 
