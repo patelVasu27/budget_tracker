@@ -19,9 +19,17 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<FormData>()
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<FormData>({
+    mode: 'onSubmit',
+  })
   const modalRef = useRef<HTMLDivElement>(null)
-  const firstFocusableRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!isOpen) {
+      reset()
+      setError(null)
+    }
+  }, [isOpen, reset])
 
   // Focus trap within modal when open
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -55,9 +63,10 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   useEffect(() => {
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown)
-      // Focus first input on open
-      setTimeout(() => firstFocusableRef.current?.focus(), 50)
-      // Prevent background scroll
+      setTimeout(() => {
+        const firstInput = modalRef.current?.querySelector('input')
+        firstInput?.focus()
+      }, 50)
       document.body.style.overflow = 'hidden'
     }
     return () => {
@@ -126,10 +135,9 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
             </label>
             <input
               type="email"
-              {...register('email', { required: true })}
+              {...register('email', { required: 'Email is required' })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="you@example.com"
-              ref={firstFocusableRef}
               aria-label="Email address"
               aria-required="true"
               aria-invalid={!!errors.email}
