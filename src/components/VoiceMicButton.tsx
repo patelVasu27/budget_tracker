@@ -80,14 +80,29 @@ export function VoiceMicButton({ onResult, onError: _onError, isDisabled }: Voic
     )
   }
 
-  // D-18: Hold-to-record
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault()
+    startRecording()
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault()
+    stopRecording()
+  }
+
   return (
     <button
-      onMouseDown={startRecording}
-      onMouseUp={stopRecording}
+      onMouseDown={(e) => {
+        e.preventDefault()
+        startRecording()
+      }}
+      onMouseUp={(e) => {
+        e.preventDefault()
+        stopRecording()
+      }}
       onMouseLeave={abortRecording}
-      onTouchStart={startRecording}
-      onTouchEnd={stopRecording}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
       onTouchCancel={abortRecording}
       disabled={isDisabled}
       className={`p-3 rounded-xl transition-all duration-200 ${

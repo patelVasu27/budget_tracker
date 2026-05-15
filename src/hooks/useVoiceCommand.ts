@@ -1,4 +1,4 @@
-import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
+import { useSpeechRecognition as useSpeechRecognitionOrig } from 'react-speech-recognition'
 
 export interface UseVoiceCommandReturn {
   transcript: string
@@ -12,10 +12,6 @@ export interface UseVoiceCommandReturn {
 
 /**
  * Custom hook wrapping react-speech-recognition with hold-to-record semantics.
- *
- * - startRecording(): resets transcript, starts listening (non-continuous, English)
- * - stopRecording(): stops listening (transcript arrives async after stop)
- * - abortRecording(): aborts listening and resets transcript
  */
 export function useVoiceCommand(): UseVoiceCommandReturn {
   const {
@@ -24,19 +20,21 @@ export function useVoiceCommand(): UseVoiceCommandReturn {
     browserSupportsSpeechRecognition,
     isMicrophoneAvailable,
     resetTranscript,
-  } = useSpeechRecognition()
+    startListening,
+    stopListening,
+  } = useSpeechRecognitionOrig()
 
   const startRecording = () => {
     resetTranscript()
-    SpeechRecognition.startListening({ continuous: false, language: 'en-US' })
+    startListening({ continuous: false, language: 'en-US' })
   }
 
   const stopRecording = () => {
-    SpeechRecognition.stopListening()
+    stopListening()
   }
 
   const abortRecording = () => {
-    SpeechRecognition.abortListening()
+    stopListening()
     resetTranscript()
   }
 
