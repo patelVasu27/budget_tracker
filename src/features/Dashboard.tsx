@@ -94,17 +94,20 @@ export function Dashboard() {
     },
   })
 
-  const handleVoiceResult = (transcript: string) => {
+const handleVoiceResult = (transcript: string) => {
     setVoiceError(null)
     const amount = parseAmount(transcript)
+    console.log('Voice result:', { transcript, amount })
     
     const { bestGuess } = matchCategory(transcript)
     const note = transcript
       .replace(/\d+(?:\.\d{1,2})?/g, '')
       .replace(/[₹₨]/g, '')
       .replace(/\b(?:rs\.?|rupees?|inr)\b\s*\d+/gi, '')
-      .replace(/\b\d+\s*(?:rs\.?|rupees?|inr)\b/gi, '')
+      .replace(/\b\d+\s*(?:rs\.?|inr)\b/gi, '')
       .replace(/\s+/g, ' ').trim()
+    
+    console.log('Voice prefill:', { amount, bestGuess, note })
     
     // Always open modal - if amount failed, user can manually enter it
     // This provides a reliable fallback when voice parsing fails
