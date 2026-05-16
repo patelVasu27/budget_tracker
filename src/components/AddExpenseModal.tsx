@@ -205,7 +205,10 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
                 {...register('amount', { required: 'Amount is required', min: '0.01' })}
                 className="input-field pl-8"
                 placeholder="0.00"
-                ref={firstFocusableRef}
+                ref={(e) => {
+                  register('amount').ref(e)
+                  firstFocusableRef.current = e
+                }}
                 aria-label="Expense amount"
                 aria-required="true"
                 aria-invalid={!!errors.amount}
