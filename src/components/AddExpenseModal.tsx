@@ -36,7 +36,7 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
   const queryClient = useQueryClient()
   const [error, setError] = useState('')
 
-  const { register, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm<ExpenseForm>({
+  const { register, handleSubmit, formState: { errors }, reset, watch } = useForm<ExpenseForm>({
     defaultValues: {
       amount: '',
       category: 'Food' as Category,
@@ -101,10 +101,12 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
         date: editTransaction.date,
       })
     } else if (voicePrefill) {
-      setValue('amount', voicePrefill.amount.toString())
-      setValue('category', voicePrefill.category as Category)
-      setValue('note', voicePrefill.note)
-      setValue('date', format(new Date(), 'yyyy-MM-dd'))
+      reset({
+        amount: voicePrefill.amount > 0 ? voicePrefill.amount.toString() : '',
+        category: voicePrefill.category as Category,
+        note: voicePrefill.note,
+        date: format(new Date(), 'yyyy-MM-dd'),
+      })
     } else {
       reset({
         amount: '',
@@ -113,7 +115,7 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
         date: format(new Date(), 'yyyy-MM-dd'),
       })
     }
-  }, [editTransaction, voicePrefill, reset, setValue, isOpen])
+  }, [editTransaction, voicePrefill, reset, isOpen])
 
   const addMutation = useMutation({
     mutationFn: async (data: ExpenseForm) => {
