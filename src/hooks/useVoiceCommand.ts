@@ -28,7 +28,7 @@ export function useVoiceCommand(): UseVoiceCommandReturn {
       setVoiceError(null)
       resetTranscript()
       try {
-        SpeechRecognition.startListening({ continuous: false, language: 'en-IN' })
+        SpeechRecognition.startListening({ continuous: false, language: 'en-US', interimResults: true })
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Voice recording failed to start'
         setVoiceError(message)

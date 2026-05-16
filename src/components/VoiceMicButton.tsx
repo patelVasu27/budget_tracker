@@ -91,12 +91,14 @@ export function VoiceMicButton({ onResult, onError, isDisabled }: VoiceMicButton
       >
         <Mic className={`w-5 h-5 transition-transform duration-200 ${isListening ? 'scale-110' : ''}`} aria-hidden="true" />
       </button>
-      <div className={`absolute top-full mt-1.5 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md text-[10px] font-medium whitespace-nowrap pointer-events-none transition-all duration-200 ${
+      <div className={`absolute top-full mt-1.5 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md text-[10px] font-medium whitespace-nowrap pointer-events-none transition-all duration-200 min-w-[120px] text-center ${
         isListening
           ? 'bg-accent-red/10 text-accent-red opacity-100'
           : 'bg-primary/5 text-secondary opacity-0 group-hover:opacity-100'
       }`}>
-        {isListening ? 'Listening... tap to stop' : 'Say amount like 350 or 500'}
+        {isListening 
+          ? (transcript || 'Listening...') 
+          : 'Say amount like 350 or 500'}
       </div>
     </div>
   )
