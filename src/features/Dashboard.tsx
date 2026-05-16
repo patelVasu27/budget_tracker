@@ -95,19 +95,9 @@ export function Dashboard() {
   })
 
   const handleVoiceResult = (transcript: string) => {
-    console.log('Voice transcript:', transcript)
     setVoiceError(null)
     const amount = parseAmount(transcript)
-    console.log('Parsed amount:', amount)
-    if (!amount) {
-      if (retryCount < MAX_RETRIES) {
-        setRetryCount((c) => c + 1)
-        setVoiceError("Couldn't detect an amount. Tap the mic to try again.")
-      } else {
-        setVoiceError("Voice didn't work this time. Use the form below to add your expense.")
-      }
-      return
-    }
+    
     const { bestGuess } = matchCategory(transcript)
     const note = transcript
       .replace(/\d+(?:\.\d{1,2})?/g, '')
@@ -115,7 +105,14 @@ export function Dashboard() {
       .replace(/\b(?:rs\.?|rupees?|inr)\b\s*\d+/gi, '')
       .replace(/\b\d+\s*(?:rs\.?|rupees?|inr)\b/gi, '')
       .replace(/\s+/g, ' ').trim()
-    setVoicePrefill({ amount, category: bestGuess, note })
+    
+    // Always open modal - if amount failed, user can manually enter it
+    // This provides a reliable fallback when voice parsing fails
+    setVoicePrefill({ 
+      amount: amount || 0, // Put 0 as placeholder if parsing failed
+      category: bestGuess, 
+      note: note || transcript.replace(/\d+(?:\.\d{1,2})?/g, '').replace(/[₹₨]/g, '').replace(/\s+/g, ' ').trim()
+    })
     setShowExpenseModal(true)
     setRetryCount(0)
   }

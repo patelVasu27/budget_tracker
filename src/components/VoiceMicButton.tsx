@@ -96,7 +96,7 @@ export function VoiceMicButton({ onResult, onError, isDisabled }: VoiceMicButton
           ? 'bg-accent-red/10 text-accent-red opacity-100'
           : 'bg-primary/5 text-secondary opacity-0 group-hover:opacity-100'
       }`}>
-        {isListening ? 'Listening... tap to stop' : 'Tap to record'}
+        {isListening ? 'Listening... tap to stop' : 'Say amount like 350 or 500'}
       </div>
     </div>
   )
