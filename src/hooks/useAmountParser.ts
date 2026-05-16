@@ -29,7 +29,50 @@ export function parseAmount(text: string): number | null {
 
   if (!lower) return null
 
-  // Pass 1: digit patterns (e.g., "250", "250.50")
+  // First try word-form numbers (e.g., "three fifty", "two hundred fifty")
+  const words = lower
+    .replace(/[^a-z\s]/g, '')
+    .split(/\s+/)
+    .filter(Boolean)
+
+  if (words.length > 0) {
+    let total = 0
+    let current = 0
+    let foundNumber = false
+    let prevNum = 0
+    let prevIsNum = false
+
+    for (const word of words) {
+      if (word === 'and') continue
+
+      if (WORD_MAP[word] !== undefined) {
+        const num = WORD_MAP[word]
+        if (prevIsNum && prevNum < 10 && num >= 10 && num < 100) {
+          current = current - prevNum + (prevNum * 100 + num)
+        } else {
+          current += num
+        }
+        prevNum = num
+        prevIsNum = true
+        foundNumber = true
+      } else if (SCALE_MAP[word] !== undefined) {
+        prevIsNum = false
+        current = current === 0 ? SCALE_MAP[word] : current * SCALE_MAP[word]
+        foundNumber = true
+      } else {
+        total += current
+        current = 0
+        prevIsNum = false
+      }
+    }
+    total += current
+
+    if (foundNumber && total > 0) {
+      return total
+    }
+  }
+
+  // Fallback to digit patterns only if word parsing found nothing
   const digitMatches = lower.match(/\d+(?:\.\d{1,2})?/g)
   if (digitMatches) {
     const amounts = digitMatches.map(Number).filter((n) => n > 0)
@@ -38,61 +81,5 @@ export function parseAmount(text: string): number | null {
     }
   }
 
-  // Pass 2: word-form numbers (e.g., "two hundred fifty")
-  const words = lower
-    .replace(/[^a-z\s]/g, '')
-    .split(/\s+/)
-    .filter(Boolean)
-
-  if (words.length === 0) return null
-
-  let total = 0
-  let current = 0
-  let foundNumber = false
-  let prevNum = 0
-  let prevIsNum = false
-
-  for (const word of words) {
-    if (word === 'and') continue
-
-    if (WORD_MAP[word] !== undefined) {
-      const num = WORD_MAP[word]
-      if (prevIsNum && prevNum < 10 && num >= 10 && num < 100) {
-        current = current - prevNum + (prevNum * 100 + num)
-      } else {
-        current += num
-      }
-      prevNum = num
-      prevIsNum = true
-      foundNumber = true
-    } else if (SCALE_MAP[word] !== undefined) {
-      prevIsNum = false
-      current = current === 0 ? SCALE_MAP[word] : current * SCALE_MAP[word]
-      foundNumber = true
-    } else {
-      // Non-number word; flush current accumulator
-      total += current
-      current = 0
-      prevIsNum = false
-    }
-  }
-  total += current
-
-  // Special case: two-word number patterns like "two fifty" or "twelve fifty"
-  if (words.length === 2 && WORD_MAP[words[0]] !== undefined && WORD_MAP[words[1]] !== undefined) {
-    const first = WORD_MAP[words[0]]
-    const second = WORD_MAP[words[1]]
-    if (second >= 10 && second < 100) {
-      // "two fifty" → 250 (colloquial for 250)
-      // "twelve fifty" → 12.50 (colloquial for $12.50)
-      // Heuristic: first < 10 prefers combined hundred-scale; first >= 10 prefers decimal
-      if (first < 10) {
-        return first * 100 + second
-      } else {
-        return first + second / 100
-      }
-    }
-  }
-
-  return foundNumber && total > 0 ? total : null
+  return null
 }
