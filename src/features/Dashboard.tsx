@@ -95,8 +95,10 @@ export function Dashboard() {
   })
 
   const handleVoiceResult = (transcript: string) => {
+    console.log('Voice transcript:', transcript)
     setVoiceError(null)
     const amount = parseAmount(transcript)
+    console.log('Parsed amount:', amount)
     if (!amount) {
       if (retryCount < MAX_RETRIES) {
         setRetryCount((c) => c + 1)
