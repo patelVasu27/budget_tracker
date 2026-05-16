@@ -21,10 +21,10 @@ Claude must follow these rules in every conversation and code suggestion.
 
 The project includes the following core documents:
 
-- PROJECT_OVERVIEW.md
-- TECH_STACK.md
-- USER_FLOW.md
-- FEATURES.md
+- .planning/PROJECT.md
+- .planning/REQUIREMENTS.md
+- .planning/ROADMAP.md
+- .planning/STATE.md
 - CLAUDE.md
 
 These documents define:

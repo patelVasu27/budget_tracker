@@ -53,7 +53,6 @@ Phase 0 (Not started). Run `/gsd-plan-phase 1` to begin Phase 1: Foundation & Da
 - `.planning/ROADMAP.md` — Phase structure
 - `.planning/REQUIREMENTS.md` — Detailed requirements with REQ-IDs
 - `CLAUDE.md` — This file
-- `PROJECT_OVERVIEW.md`, `TECH_STACK.md`, `FEATURES.md`, `USER_FLOW.md` — Original planning docs
 
 ---
 *Last updated: 2026-05-12 after initialization*
