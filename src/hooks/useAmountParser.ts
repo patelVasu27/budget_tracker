@@ -29,6 +29,9 @@ export function parseAmount(text: string): number | null {
 
   if (!lower) return null
 
+  let total = 0
+  let foundNumber = false
+
   // First try word-form numbers (e.g., "three fifty", "two hundred fifty")
   const words = lower
     .replace(/[^a-z\s]/g, '')
@@ -36,9 +39,7 @@ export function parseAmount(text: string): number | null {
     .filter(Boolean)
 
   if (words.length > 0) {
-    let total = 0
     let current = 0
-    let foundNumber = false
     let prevNum = 0
     let prevIsNum = false
 
@@ -66,19 +67,19 @@ export function parseAmount(text: string): number | null {
       }
     }
     total += current
-
-    if (foundNumber && total > 0) {
-      return total
-    }
   }
 
-  // Fallback to digit patterns only if word parsing found nothing
+  // Collect all digit matches
   const digitMatches = lower.match(/\d+(?:\.\d{1,2})?/g)
-  if (digitMatches) {
-    const amounts = digitMatches.map(Number).filter((n) => n > 0)
-    if (amounts.length >= 1) {
-      return Math.max(...amounts)
-    }
+  const digitAmounts = digitMatches ? digitMatches.map(Number).filter((n) => n > 0) : []
+
+  const finalAmounts = [...digitAmounts]
+  if (foundNumber && total > 0) {
+    finalAmounts.push(total)
+  }
+
+  if (finalAmounts.length >= 1) {
+    return Math.max(...finalAmounts)
   }
 
   return null
