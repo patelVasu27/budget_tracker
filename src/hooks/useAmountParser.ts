@@ -26,61 +26,62 @@ const SCALE_MAP: Record<string, number> = {
  */
 export function parseAmount(text: string): number | null {
   const lower = text.toLowerCase().trim()
-
   if (!lower) return null
 
-  let total = 0
-  let foundNumber = false
-
-  // First try word-form numbers (e.g., "three fifty", "two hundred fifty")
-  const words = lower
-    .replace(/[^a-z\s]/g, '')
-    .split(/\s+/)
-    .filter(Boolean)
-
-  if (words.length > 0) {
-    let current = 0
-    let prevNum = 0
-    let prevIsNum = false
-
-    for (const word of words) {
-      if (word === 'and') continue
-
-      if (WORD_MAP[word] !== undefined) {
-        const num = WORD_MAP[word]
-        if (prevIsNum && prevNum < 10 && num >= 10 && num < 100) {
-          current = current - prevNum + (prevNum * 100 + num)
-        } else {
-          current += num
-        }
-        prevNum = num
-        prevIsNum = true
-        foundNumber = true
-      } else if (SCALE_MAP[word] !== undefined) {
-        prevIsNum = false
-        current = current === 0 ? SCALE_MAP[word] : current * SCALE_MAP[word]
-        foundNumber = true
-      } else {
-        total += current
-        current = 0
-        prevIsNum = false
-      }
-    }
-    total += current
-  }
-
-  // Collect all digit matches
-  const digitMatches = lower.match(/\d+(?:\.\d{1,2})?/g)
+  // 1. Extract digit-based numbers first (highest confidence)
+  // Handle commas like "1,250.50" by removing them if they are between digits
+  const cleanForDigits = lower.replace(/(\d),(\d)/g, '$1$2')
+  const digitMatches = cleanForDigits.match(/\d+(?:\.\d{1,2})?/g)
   const digitAmounts = digitMatches ? digitMatches.map(Number).filter((n) => n > 0) : []
 
+  // 2. Extract word-based numbers
+  // Strip currency words and symbols to avoid noise in word parsing
+  const cleanForWords = lower
+    .replace(/\b(?:rs\.?|rupees?|inr|usd|dollars?|cents?|₹|₨)\b/gi, ' ')
+    .replace(/[^a-z\s]/g, ' ')
+  
+  const words = cleanForWords.split(/\s+/).filter(Boolean)
+  
+  let total = 0
+  let current = 0
+  let foundNumber = false
+  let prevNum = 0
+  let prevIsNum = false
+
+  for (const word of words) {
+    if (word === 'and') continue
+
+    if (WORD_MAP[word] !== undefined) {
+      const num = WORD_MAP[word]
+      // Support for cases like "three fifty" -> 350
+      if (prevIsNum && prevNum < 10 && num >= 10 && num < 100) {
+        current = current - prevNum + (prevNum * 100 + num)
+      } else {
+        current += num
+      }
+      prevNum = num
+      prevIsNum = true
+      foundNumber = true
+    } else if (SCALE_MAP[word] !== undefined) {
+      prevIsNum = false
+      current = current === 0 ? SCALE_MAP[word] : current * SCALE_MAP[word]
+      foundNumber = true
+    } else {
+      total += current
+      current = 0
+      prevIsNum = false
+    }
+  }
+  total += current
+
+  // 3. Combine and pick largest (heuristic: user usually says the actual amount)
   const finalAmounts = [...digitAmounts]
   if (foundNumber && total > 0) {
     finalAmounts.push(total)
   }
 
-  if (finalAmounts.length >= 1) {
-    return Math.max(...finalAmounts)
-  }
-
-  return null
+  if (finalAmounts.length === 0) return null
+  
+  // Return the maximum value found in the transcript
+  return Math.max(...finalAmounts)
 }

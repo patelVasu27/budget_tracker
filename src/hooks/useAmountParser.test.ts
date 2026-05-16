@@ -52,4 +52,12 @@ describe('parseAmount', () => {
   it('handles "one for 500"', () => {
     expect(parseAmount('one for 500')).toBe(500)
   })
+
+  it('handles "Rs. 500 lunch"', () => {
+    expect(parseAmount('Rs. 500 lunch')).toBe(500)
+  })
+
+  it('handles "INR 1,250.50"', () => {
+    expect(parseAmount('INR 1,250.50')).toBe(1250.5)
+  })
 })

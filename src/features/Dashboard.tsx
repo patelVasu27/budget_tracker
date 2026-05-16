@@ -97,24 +97,22 @@ export function Dashboard() {
 const handleVoiceResult = (transcript: string) => {
     setVoiceError(null)
     const amount = parseAmount(transcript)
-    console.log('Voice result:', { transcript, amount })
-    
     const { bestGuess } = matchCategory(transcript)
-    const note = transcript
+    
+    // Robust note extraction: remove currency markers first, then digits, then cleanup punctuation
+    const cleanNote = transcript
+      .replace(/\b(?:rs\.?|rupees?|inr|usd|dollars?|cents?|₹|₨)\b/gi, '')
       .replace(/\d+(?:\.\d{1,2})?/g, '')
-      .replace(/[₹₨]/g, '')
-      .replace(/\b(?:rs\.?|rupees?|inr)\b\s*\d+/gi, '')
-      .replace(/\b\d+\s*(?:rs\.?|inr)\b/gi, '')
-      .replace(/\s+/g, ' ').trim()
+      .replace(/[^\w\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+
+    console.info('[Voice Parsing]', { transcript, amount, category: bestGuess, note: cleanNote })
     
-    console.log('Voice prefill:', { amount, bestGuess, note })
-    
-    // Always open modal - if amount failed, user can manually enter it
-    // This provides a reliable fallback when voice parsing fails
     setVoicePrefill({ 
-      amount: amount || 0, // Put 0 as placeholder if parsing failed
+      amount: amount || 0,
       category: bestGuess, 
-      note: note || transcript.replace(/\d+(?:\.\d{1,2})?/g, '').replace(/[₹₨]/g, '').replace(/\s+/g, ' ').trim()
+      note: cleanNote || transcript.replace(/\d+(?:\.\d{1,2})?/g, '').trim()
     })
     setShowExpenseModal(true)
     setRetryCount(0)
