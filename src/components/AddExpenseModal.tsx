@@ -47,7 +47,7 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
 
   const selectedCategory = watch('category')
   const modalRef = useRef<HTMLDivElement>(null)
-  const firstFocusableRef = useRef<HTMLInputElement>(null)
+  const firstFocusableRef = useRef<HTMLInputElement | null>(null)
 
   // Focus trap within modal when open
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -206,7 +206,8 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
                 className="input-field pl-8"
                 placeholder="0.00"
                 ref={(e) => {
-                  register('amount').ref(e)
+                  const { ref } = register('amount', { required: 'Amount is required', min: '0.01' })
+                  ref(e)
                   firstFocusableRef.current = e
                 }}
                 aria-label="Expense amount"
