@@ -27,6 +27,7 @@ export function CategoryManager({ isOpen, onClose }: CategoryManagerProps) {
   const [newCategoryColor, setNewCategoryColor] = useState<string | null>(null)
   const [newGroupName, setNewGroupName] = useState('')
   const [error, setError] = useState('')
+  const [categoryType, setCategoryType] = useState<'expense' | 'income'>('expense')
 
   const { data: categories = [] } = useCategories(user?.id)
   const { data: groups = [] } = useCategoryGroups(user?.id)
@@ -37,8 +38,9 @@ export function CategoryManager({ isOpen, onClose }: CategoryManagerProps) {
 
   if (!isOpen) return null
 
-  const groupedCategories = categories.filter(c => c.group_id)
-  const ungroupedCategories = categories.filter(c => !c.group_id)
+  const filteredCategories = categories.filter(c => c.type === categoryType)
+  const groupedCategories = filteredCategories.filter(c => c.group_id)
+  const ungroupedCategories = filteredCategories.filter(c => !c.group_id)
 
   const toggleGroup = (groupId: string) => {
     const newExpanded = new Set(expandedGroups)
@@ -58,6 +60,7 @@ export function CategoryManager({ isOpen, onClose }: CategoryManagerProps) {
         userId: user.id,
         data: {
           name: newCategoryName.trim(),
+          type: categoryType,
           group_id: newCategoryGroup,
           icon: newCategoryIcon,
           color: newCategoryColor,
@@ -127,6 +130,32 @@ export function CategoryManager({ isOpen, onClose }: CategoryManagerProps) {
           {error && (
             <div className="p-3 bg-accent-red/10 text-accent-red rounded-xl text-sm">{error}</div>
           )}
+
+          {/* Category Type Toggle */}
+          <div className="flex bg-[#EEF1EB] p-1 rounded-xl mb-2">
+            <button
+              type="button"
+              onClick={() => setCategoryType('expense')}
+              className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all active:scale-95 ${
+                categoryType === 'expense'
+                  ? 'bg-accent-red text-white shadow-sm'
+                  : 'text-secondary hover:text-primary'
+              }`}
+            >
+              Expense Categories
+            </button>
+            <button
+              type="button"
+              onClick={() => setCategoryType('income')}
+              className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all active:scale-95 ${
+                categoryType === 'income'
+                  ? 'bg-accent-green text-white shadow-sm'
+                  : 'text-secondary hover:text-primary'
+              }`}
+            >
+              Income Categories
+            </button>
+          </div>
 
           {groups.map(group => (
             <div key={group.id} className="border border-border-subtle rounded-xl overflow-hidden">

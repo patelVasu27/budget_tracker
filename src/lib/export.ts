@@ -29,7 +29,7 @@ export async function generateCSV(
   includeSummary: boolean
 ): Promise<Blob> {
   const rows: string[] = []
-  rows.push('Date,Amount,Category,Note')
+  rows.push('Date,Amount,Type,Category,Note')
 
   for (let i = 0; i < transactions.length; i++) {
     if (i > 0 && i % CHUNK_SIZE === 0) await waitForIdle()
@@ -37,6 +37,7 @@ export async function generateCSV(
     rows.push([
       escapeCSV(tx.date),
       escapeCSV(tx.amount.toFixed(2)),
+      escapeCSV(tx.type || 'expense'),
       escapeCSV(tx.category),
       escapeCSV(tx.note),
     ].join(','))
@@ -45,19 +46,20 @@ export async function generateCSV(
   if (includeSummary && transactions.length > 0) {
     rows.push('')
     rows.push('Category Summary')
-    rows.push('Category,Count,Total Amount')
+    rows.push('Category,Type,Count,Total Amount')
 
-    const summary = new Map<string, { count: number; total: number }>()
+    const summary = new Map<string, { count: number; total: number; type: string }>()
     for (const tx of transactions) {
       const cat = tx.category || 'Uncategorized'
-      const prev = summary.get(cat) ?? { count: 0, total: 0 }
+      const type = tx.type || 'expense'
+      const prev = summary.get(cat) ?? { count: 0, total: 0, type }
       prev.count++
       prev.total += tx.amount
       summary.set(cat, prev)
     }
 
-    for (const [category, { count, total }] of summary) {
-      rows.push([escapeCSV(category), escapeCSV(count), escapeCSV(total.toFixed(2))].join(','))
+    for (const [category, { count, total, type }] of summary) {
+      rows.push([escapeCSV(category), escapeCSV(type), escapeCSV(count), escapeCSV(total.toFixed(2))].join(','))
     }
   }
 
@@ -74,6 +76,7 @@ export async function generateXLSX(
   const txData = transactions.map((tx) => ({
     Date: tx.date,
     Amount: tx.amount,
+    Type: tx.type || 'expense',
     Category: tx.category,
     Note: tx.note || '',
   }))
@@ -81,17 +84,19 @@ export async function generateXLSX(
   XLSX.utils.book_append_sheet(wb, txSheet, 'Transactions')
 
   if (includeSummary && transactions.length > 0) {
-    const summary = new Map<string, { count: number; total: number }>()
+    const summary = new Map<string, { count: number; total: number; type: string }>()
     for (const tx of transactions) {
       const cat = tx.category || 'Uncategorized'
-      const prev = summary.get(cat) ?? { count: 0, total: 0 }
+      const type = tx.type || 'expense'
+      const prev = summary.get(cat) ?? { count: 0, total: 0, type }
       prev.count++
       prev.total += tx.amount
       summary.set(cat, prev)
     }
 
-    const summaryData = Array.from(summary.entries()).map(([category, { count, total }]) => ({
+    const summaryData = Array.from(summary.entries()).map(([category, { count, total, type }]) => ({
       Category: category,
+      Type: type,
       Count: count,
       'Total Amount': parseFloat(total.toFixed(2)),
     }))

@@ -12,7 +12,7 @@ interface AddExpenseModalProps {
   isOpen: boolean
   onClose: () => void
   editTransaction?: Transaction | null
-  voicePrefill?: { amount: number; category: string; note: string } | null
+  voicePrefill?: { amount: number; category: string; note: string; type?: 'expense' | 'income' } | null
 }
 
 interface ExpenseForm {
@@ -26,8 +26,9 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
   const [error, setError] = useState('')
+  const [transactionType, setTransactionType] = useState<'expense' | 'income'>('expense')
 
-  const { grouped, ungrouped, allCategories, isLoading } = useCategoryPickerData(user?.id)
+  const { grouped, ungrouped, allCategories, isLoading } = useCategoryPickerData(user?.id, transactionType)
 
   const { register, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm<ExpenseForm>({
     defaultValues: {
@@ -82,39 +83,62 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
     }
   }, [isOpen, handleKeyDown])
 
+  // Setup form once when modal opens
   useEffect(() => {
-    if (isOpen && allCategories.length > 0 && !selectedCategoryId) {
-      setValue('categoryId', allCategories[0].id)
-    }
-  }, [isOpen, allCategories, selectedCategoryId, setValue])
+    if (!isOpen) return
 
-  useEffect(() => {
     if (editTransaction) {
+      setTransactionType(editTransaction.type || 'expense')
       reset({
         amount: editTransaction.amount.toString(),
-        categoryId: editTransaction.category_id || allCategories.find(c => c.name === editTransaction.category)?.id || '',
+        categoryId: editTransaction.category_id || '',
         note: editTransaction.note || '',
         date: editTransaction.date,
       })
     } else if (voicePrefill) {
-      const matchedCategory = allCategories.find(
-        c => c.name.toLowerCase() === voicePrefill.category.toLowerCase()
-      )
+      setTransactionType(voicePrefill.type || 'expense')
       reset({
         amount: voicePrefill.amount > 0 ? voicePrefill.amount.toString() : '',
-        categoryId: matchedCategory?.id || allCategories[0]?.id || '',
+        categoryId: '',
         note: voicePrefill.note,
         date: format(new Date(), 'yyyy-MM-dd'),
       })
-    } else if (allCategories.length > 0) {
+    } else {
+      setTransactionType('expense')
       reset({
         amount: '',
-        categoryId: allCategories[0].id,
+        categoryId: '',
         note: '',
         date: format(new Date(), 'yyyy-MM-dd'),
       })
     }
-  }, [editTransaction, voicePrefill, reset, isOpen, allCategories])
+  }, [isOpen, editTransaction, voicePrefill, reset])
+
+  // Set default category when categories load or selection is missing
+  useEffect(() => {
+    if (isOpen && allCategories.length > 0 && !selectedCategoryId) {
+      if (editTransaction) {
+        setValue('categoryId', editTransaction.category_id || allCategories.find(c => c.name === editTransaction.category)?.id || allCategories[0].id)
+      } else if (voicePrefill) {
+        const matchedCategory = allCategories.find(
+          c => c.name.toLowerCase() === voicePrefill.category.toLowerCase()
+        )
+        setValue('categoryId', matchedCategory?.id || allCategories[0].id)
+      } else {
+        setValue('categoryId', allCategories[0].id)
+      }
+    }
+  }, [isOpen, allCategories, selectedCategoryId, setValue, editTransaction, voicePrefill])
+
+  // Reset category if user changes toggle to a type that doesn't contain current category
+  useEffect(() => {
+    if (isOpen && allCategories.length > 0) {
+      const exists = allCategories.some(c => c.id === selectedCategoryId)
+      if (!exists) {
+        setValue('categoryId', allCategories[0].id)
+      }
+    }
+  }, [transactionType, allCategories, selectedCategoryId, setValue, isOpen])
 
   const addMutation = useMutation({
     mutationFn: async (data: ExpenseForm) => {
@@ -123,6 +147,7 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
       await supabase.from('transactions').insert({
         user_id: user.id,
         amount: parseFloat(data.amount),
+        type: transactionType,
         category: category?.name || 'Other',
         category_id: data.categoryId,
         note: data.note || null,
@@ -144,6 +169,7 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
         .from('transactions')
         .update({
           amount: parseFloat(data.amount),
+          type: transactionType,
           category: category?.name || 'Other',
           category_id: data.categoryId,
           note: data.note || null,
@@ -190,14 +216,42 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
 
         <div className="mb-6">
           <h2 id="expense-modal-heading" className="text-xl font-bold text-primary font-display">
-            {editTransaction ? 'Edit Expense' : 'Add Expense'}
+            {editTransaction
+              ? (transactionType === 'income' ? 'Edit Income' : 'Edit Expense')
+              : (transactionType === 'income' ? 'Add Income' : 'Add Expense')}
           </h2>
           <p id="expense-modal-subtitle" className="text-xs text-secondary mt-1 font-sans">
-            {editTransaction ? 'Update the details below' : 'Fill in the details to add an expense'}
+            {editTransaction ? 'Update the details below' : `Fill in the details to add ${transactionType === 'income' ? 'an income' : 'an expense'}`}
           </p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          {/* Transaction Type Toggle */}
+          <div className="flex bg-[#EEF1EB] p-1 rounded-xl">
+            <button
+              type="button"
+              onClick={() => setTransactionType('expense')}
+              className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all active:scale-95 ${
+                transactionType === 'expense'
+                  ? 'bg-accent-red text-white shadow-sm'
+                  : 'text-secondary hover:text-primary'
+              }`}
+            >
+              Expense
+            </button>
+            <button
+              type="button"
+              onClick={() => setTransactionType('income')}
+              className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all active:scale-95 ${
+                transactionType === 'income'
+                  ? 'bg-accent-green text-white shadow-sm'
+                  : 'text-secondary hover:text-primary'
+              }`}
+            >
+              Income
+            </button>
+          </div>
+
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-secondary mb-2">Amount</label>
             <div className="relative">
@@ -213,7 +267,7 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
                   ref(e)
                   firstFocusableRef.current = e
                 }}
-                aria-label="Expense amount"
+                aria-label={`${transactionType === 'income' ? 'Income' : 'Expense'} amount`}
                 aria-required="true"
                 aria-invalid={!!errors.amount}
               />
@@ -314,7 +368,7 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
               type="date"
               {...register('date', { required: true })}
               className="input-field font-sans text-sm"
-              aria-label="Expense date"
+              aria-label={`${transactionType === 'income' ? 'Income' : 'Expense'} date`}
               aria-required="true"
             />
           </div>
@@ -327,7 +381,7 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
               type="text"
               {...register('note')}
               className="input-field text-sm"
-              placeholder="What did you buy?"
+              placeholder={transactionType === 'income' ? 'Where did this income come from?' : 'What did you buy?'}
               aria-label="Optional note"
             />
           </div>
@@ -350,9 +404,9 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
             <button
               type="submit"
               className="btn-primary flex-1"
-              aria-label={editTransaction ? 'Save changes' : 'Add expense'}
+              aria-label={editTransaction ? 'Save changes' : (transactionType === 'income' ? 'Add Income' : 'Add Expense')}
             >
-              {editTransaction ? 'Save Changes' : 'Add Expense'}
+              {editTransaction ? 'Save Changes' : (transactionType === 'income' ? 'Add Income' : 'Add Expense')}
             </button>
           </div>
         </form>

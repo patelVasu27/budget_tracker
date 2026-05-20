@@ -38,14 +38,16 @@ export function useCategoryGroups(userId: string | undefined) {
   })
 }
 
-export function useCategoryPickerData(userId: string | undefined) {
+export function useCategoryPickerData(userId: string | undefined, type?: 'expense' | 'income') {
   const { data: categories = [], isLoading: isLoadingCategories } = useCategories(userId)
   const { data: groups = [], isLoading: isLoadingGroups } = useCategoryGroups(userId)
+
+  const filteredCategories = type ? categories.filter(c => c.type === type) : categories
 
   const grouped: CategoryPickerItem[] = []
   const ungrouped: Category[] = []
 
-  categories.forEach(cat => {
+  filteredCategories.forEach(cat => {
     if (cat.group_id) {
       const groupItem = grouped.find(g => g.group?.id === cat.group_id)
       if (groupItem) {
@@ -65,7 +67,7 @@ export function useCategoryPickerData(userId: string | undefined) {
   return {
     grouped,
     ungrouped,
-    allCategories: categories,
+    allCategories: filteredCategories,
     allGroups: groups,
     isLoading: isLoadingCategories || isLoadingGroups,
   }
@@ -81,6 +83,7 @@ export function useCreateCategory() {
         .insert({
           user_id: userId,
           name: data.name,
+          type: data.type,
           group_id: data.group_id,
           icon: data.icon,
           color: data.color,

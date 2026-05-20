@@ -2,6 +2,7 @@ export interface Transaction {
   id: string
   user_id: string
   amount: number
+  type: 'expense' | 'income'
   category: string
   category_id: string | null
   note: string | null
@@ -33,6 +34,7 @@ export interface Category {
   id: string
   user_id: string
   name: string
+  type: 'expense' | 'income'
   group_id: string | null
   group_name?: string
   icon: string | null
@@ -52,6 +54,7 @@ export type CategoryPickerItem = {
 
 export type CategoryFormData = {
   name: string
+  type: 'expense' | 'income'
   group_id: string | null
   icon: string | null
   color: string | null

@@ -24,7 +24,7 @@ export function Dashboard() {
   const [showCategoryManager, setShowCategoryManager] = useState(false)
   const [showExportModal, setShowExportModal] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
-  const [voicePrefill, setVoicePrefill] = useState<{ amount: number; category: string; note: string } | null>(null)
+  const [voicePrefill, setVoicePrefill] = useState<{ amount: number; category: string; note: string; type?: 'expense' | 'income' } | null>(null)
   const [voiceError, setVoiceError] = useState<string | null>(null)
   const [retryCount, setRetryCount] = useState(0)
   const MAX_RETRIES = 1
@@ -113,10 +113,12 @@ const handleVoiceResult = (transcript: string) => {
 
     console.info('[Voice Parsing]', { transcript, amount, category: bestGuess, note: cleanNote })
     
+    const isIncome = /\b(?:received|earned|income|salary|bonus|gift|freelance|sold|deposit|interest|dividend)\b/i.test(transcript)
     setVoicePrefill({ 
       amount: amount || 0,
       category: bestGuess, 
-      note: cleanNote || transcript.replace(/\d+(?:\.\d{1,2})?/g, '').trim()
+      note: cleanNote || transcript.replace(/\d+(?:\.\d{1,2})?/g, '').trim(),
+      type: isIncome ? 'income' : 'expense'
     })
     setShowExpenseModal(true)
     setRetryCount(0)
@@ -146,8 +148,14 @@ const handleVoiceResult = (transcript: string) => {
     }
   }, [settings])
 
-  const totalExpenses = transactions.reduce((sum, tx) => sum + tx.amount, 0)
-  const remainingBalance = income - totalExpenses
+  const totalExpenses = transactions
+    .filter(tx => tx.type === 'expense')
+    .reduce((sum, tx) => sum + tx.amount, 0)
+  const totalIncomeTransactions = transactions
+    .filter(tx => tx.type === 'income')
+    .reduce((sum, tx) => sum + tx.amount, 0)
+  const totalIncome = income + totalIncomeTransactions
+  const remainingBalance = totalIncome - totalExpenses
 
   const handleSaveIncome = () => {
     const value = parseFloat(newIncome)
@@ -204,7 +212,7 @@ const handleVoiceResult = (transcript: string) => {
             
             {editingIncome ? (
               <div className="card p-5 animate-scale-in border-accent-green/20 bg-accent-green/[0.01]">
-                <label className="block text-xs font-bold uppercase tracking-wider text-secondary mb-2">Monthly Income</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-secondary mb-2">Base Monthly Income</label>
                 <div className="flex gap-2">
                    <div className="relative flex-1">
                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary font-semibold">₹</span>
@@ -245,7 +253,7 @@ const handleVoiceResult = (transcript: string) => {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-secondary/80 mb-1 group-hover:text-accent-green transition-colors">Tap to set income</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-secondary/80 mb-1 group-hover:text-accent-green transition-colors">Tap to set base income</p>
                     <p className="text-2xl font-bold text-primary font-display">₹{income.toFixed(2)}</p>
                   </div>
                   <Settings className="w-4 h-4 text-secondary/40 group-hover:text-accent-green group-hover:rotate-45 transition-all duration-300" aria-hidden="true" />
@@ -254,15 +262,15 @@ const handleVoiceResult = (transcript: string) => {
             )}
 
             <div className="space-y-3.5">
-              <BalanceCard title="Income" amount={income} variant="income" />
+              <BalanceCard title="Income" amount={totalIncome} variant="income" />
               <BalanceCard title="Expenses" amount={totalExpenses} variant="expense" />
               <BalanceCard title="Remaining" amount={remainingBalance} variant="balance" />
             </div>
           </aside>
 
-          <section aria-label="Recent expenses" className="space-y-4">
+          <section aria-label="Recent transactions" className="space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="text-xs font-bold text-secondary uppercase tracking-widest font-sans mb-1">Recent Expenses</h2>
+              <h2 className="text-xs font-bold text-secondary uppercase tracking-widest font-sans mb-1">Recent Transactions</h2>
               <div className="flex items-center gap-2.5">
                 {voiceError && (
                   <p className="text-xs text-accent-red font-medium max-w-48 text-right animate-fade-in" role="alert">{voiceError}</p>
@@ -282,10 +290,10 @@ const handleVoiceResult = (transcript: string) => {
                 <button 
                   onClick={() => setShowExpenseModal(true)}
                   className="btn-primary flex items-center gap-2 text-sm shadow-md"
-                  aria-label="Add a new expense"
+                  aria-label="Add a new transaction"
                 >
                   <Plus className="w-4 h-4" aria-hidden="true" />
-                  Add Expense
+                  Add Transaction
                 </button>
               </div>
             </div>

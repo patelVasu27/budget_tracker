@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS public.categories (
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   name TEXT NOT NULL CHECK (char_length(name) >= 1 AND char_length(name) <= 32),
   group_id UUID REFERENCES public.category_groups(id) ON DELETE SET NULL,
+  type TEXT NOT NULL DEFAULT 'expense' CHECK (type IN ('expense', 'income')),
   icon TEXT,
   color TEXT,
   sort_order INTEGER NOT NULL DEFAULT 0,
@@ -98,15 +99,29 @@ BEGIN
   VALUES (NEW.id, 'Default', 0)
   RETURNING id INTO default_group_id;
 
-  -- Seed default categories matching v1
-  INSERT INTO public.categories (user_id, name, group_id, icon, color, sort_order) VALUES
-    (NEW.id, 'Food', default_group_id, '🍔', '#10B981', 0),
-    (NEW.id, 'Transport', default_group_id, '🚗', '#3B82F6', 1),
-    (NEW.id, 'Utilities', default_group_id, '💡', '#F59E0B', 2),
-    (NEW.id, 'Entertainment', default_group_id, '🎬', '#8B5CF6', 3),
-    (NEW.id, 'Shopping', default_group_id, '🛒', '#EC4899', 4),
-    (NEW.id, 'Health', default_group_id, '💊', '#EF4444', 5),
-    (NEW.id, 'Other', default_group_id, '📦', '#6B7280', 6);
+  -- Create income group
+  DECLARE
+    income_group_id UUID;
+  BEGIN
+    INSERT INTO public.category_groups (user_id, name, sort_order)
+    VALUES (NEW.id, 'Income', 1)
+    RETURNING id INTO income_group_id;
+
+    -- Seed default expense categories matching v1
+    INSERT INTO public.categories (user_id, name, group_id, icon, color, sort_order, type) VALUES
+      (NEW.id, 'Food', default_group_id, '🍔', '#10B981', 0, 'expense'),
+      (NEW.id, 'Transport', default_group_id, '🚗', '#3B82F6', 1, 'expense'),
+      (NEW.id, 'Utilities', default_group_id, '💡', '#F59E0B', 2, 'expense'),
+      (NEW.id, 'Entertainment', default_group_id, '🎬', '#8B5CF6', 3, 'expense'),
+      (NEW.id, 'Shopping', default_group_id, '🛒', '#EC4899', 4, 'expense'),
+      (NEW.id, 'Health', default_group_id, '💊', '#EF4444', 5, 'expense'),
+      (NEW.id, 'Other', default_group_id, '📦', '#6B7280', 6, 'expense');
+
+    -- Seed default income categories
+    INSERT INTO public.categories (user_id, name, group_id, icon, color, sort_order, type) VALUES
+      (NEW.id, 'Salary', income_group_id, '💼', '#10B981', 0, 'income'),
+      (NEW.id, 'Gift', income_group_id, '🎁', '#3B82F6', 1, 'income');
+  END;
 
   RETURN NEW;
 END;
