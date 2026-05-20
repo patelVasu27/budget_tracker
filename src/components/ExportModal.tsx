@@ -54,17 +54,35 @@ export function ExportModal({ isOpen, onClose, userId }: ExportModalProps) {
     setError('')
 
     try {
-      const { data, error: fetchError } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', userId)
-        .gte('date', dateFrom)
-        .lte('date', dateTo)
-        .order('date', { ascending: true })
+      let transactions: Transaction[] = []
+      if (userId === 'guest') {
+        const local = localStorage.getItem('guest_transactions')
+        let allTransactions: Transaction[] = []
+        if (local) {
+          try {
+            allTransactions = JSON.parse(local)
+            if (!Array.isArray(allTransactions)) {
+              allTransactions = []
+            }
+          } catch (e) {
+            console.error('Failed to parse guest_transactions in ExportModal:', e)
+          }
+        }
+        transactions = allTransactions.filter(tx => tx.date >= dateFrom && tx.date <= dateTo)
+        // Sort by date ascending to match Supabase order
+        transactions.sort((a, b) => a.date.localeCompare(b.date))
+      } else {
+        const { data, error: fetchError } = await supabase
+          .from('transactions')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('date', dateFrom)
+          .lte('date', dateTo)
+          .order('date', { ascending: true })
 
-      if (fetchError) throw fetchError
-
-      const transactions = (data || []) as Transaction[]
+        if (fetchError) throw fetchError
+        transactions = (data || []) as Transaction[]
+      }
 
       if (transactions.length === 0) {
         setError('No transactions found in this date range.')
@@ -102,19 +120,19 @@ export function ExportModal({ isOpen, onClose, userId }: ExportModalProps) {
       aria-modal="true"
       aria-labelledby="export-modal-heading"
     >
-      <div className="absolute inset-0 bg-primary/20 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-      <div ref={modalRef} className="relative bg-surface rounded-2xl shadow-modal w-full max-w-md p-6 animate-scale-in">
+      <div className="absolute inset-0 bg-primary/20 dark:bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose} />
+      <div ref={modalRef} className="relative bg-surface dark:bg-[#1B2A1E] rounded-2xl shadow-modal w-full max-w-md p-6 animate-scale-in border border-white/20 dark:border-white/5">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-secondary hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
+          className="absolute top-4 right-4 p-2 text-secondary hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-primary/5 dark:hover:bg-white/5 rounded-lg transition-colors"
           aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>
 
         <div className="mb-6">
-          <h2 id="export-modal-heading" className="text-xl font-bold text-primary font-display">Export Transactions</h2>
-          <p className="text-xs text-secondary mt-1 font-sans">Download your transactions as CSV or XLSX</p>
+          <h2 id="export-modal-heading" className="text-xl font-bold text-primary dark:text-[#E8ECE4] font-display">Export Transactions</h2>
+          <p className="text-xs text-secondary dark:text-secondary/70 mt-1 font-sans">Download your transactions as CSV or XLSX</p>
         </div>
 
         {error && (
@@ -126,7 +144,7 @@ export function ExportModal({ isOpen, onClose, userId }: ExportModalProps) {
         <div className="space-y-5">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-secondary mb-1.5">From</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-secondary dark:text-secondary/70 mb-1.5">From</label>
               <input
                 type="date"
                 value={dateFrom}
@@ -136,7 +154,7 @@ export function ExportModal({ isOpen, onClose, userId }: ExportModalProps) {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-secondary mb-1.5">To</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-secondary dark:text-secondary/70 mb-1.5">To</label>
               <input
                 type="date"
                 value={dateTo}
@@ -148,21 +166,21 @@ export function ExportModal({ isOpen, onClose, userId }: ExportModalProps) {
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-secondary mb-1.5">Format</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-secondary dark:text-secondary/70 mb-1.5">Format</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setFileFormat('csv')}
                 className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${
                   fileFormat === 'csv'
-                    ? 'border-accent-green bg-accent-green/5'
-                    : 'border-border-subtle hover:border-[#E8ECE4]'
+                    ? 'border-accent-green bg-accent-green/5 dark:bg-accent-green/10'
+                    : 'border-border-subtle dark:border-white/5 hover:border-[#E8ECE4] dark:hover:border-white/10'
                 }`}
               >
-                <FileText className={`w-5 h-5 ${fileFormat === 'csv' ? 'text-accent-green' : 'text-secondary'}`} />
+                <FileText className={`w-5 h-5 ${fileFormat === 'csv' ? 'text-accent-green' : 'text-secondary dark:text-secondary/70'}`} />
                 <div className="text-left">
-                  <p className="text-sm font-semibold text-primary">CSV</p>
-                  <p className="text-[10px] text-secondary tracking-tight">Excel compatible</p>
+                  <p className="text-sm font-semibold text-primary dark:text-[#E8ECE4]">CSV</p>
+                  <p className="text-[10px] text-secondary dark:text-secondary/70 tracking-tight">Excel compatible</p>
                 </div>
               </button>
               <button
@@ -170,29 +188,29 @@ export function ExportModal({ isOpen, onClose, userId }: ExportModalProps) {
                 onClick={() => setFileFormat('xlsx')}
                 className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${
                   fileFormat === 'xlsx'
-                    ? 'border-accent-green bg-accent-green/5'
-                    : 'border-border-subtle hover:border-[#E8ECE4]'
+                    ? 'border-accent-green bg-accent-green/5 dark:bg-accent-green/10'
+                    : 'border-border-subtle dark:border-white/5 hover:border-[#E8ECE4] dark:hover:border-white/10'
                 }`}
               >
-                <Download className={`w-5 h-5 ${fileFormat === 'xlsx' ? 'text-accent-green' : 'text-secondary'}`} />
+                <Download className={`w-5 h-5 ${fileFormat === 'xlsx' ? 'text-accent-green' : 'text-secondary dark:text-secondary/70'}`} />
                 <div className="text-left">
-                  <p className="text-sm font-semibold text-primary">XLSX</p>
-                  <p className="text-[10px] text-secondary tracking-tight">Excel workbook</p>
+                  <p className="text-sm font-semibold text-primary dark:text-[#E8ECE4]">XLSX</p>
+                  <p className="text-[10px] text-secondary dark:text-secondary/70 tracking-tight">Excel workbook</p>
                 </div>
               </button>
             </div>
           </div>
 
-          <label className="flex items-center gap-3 p-3 rounded-xl border border-border-subtle cursor-pointer hover:bg-[#F9FAF8] transition-colors select-none">
+          <label className="flex items-center gap-3 p-3 rounded-xl border border-border-subtle dark:border-white/5 cursor-pointer hover:bg-[#F9FAF8] dark:hover:bg-white/5 transition-colors select-none">
             <input
               type="checkbox"
               checked={includeSummary}
               onChange={(e) => setIncludeSummary(e.target.checked)}
-              className="w-4 h-4 rounded border-border-color text-accent-green focus:ring-accent-green"
+              className="w-4 h-4 rounded border-border-color dark:border-white/20 text-accent-green focus:ring-accent-green bg-transparent"
             />
             <div>
-              <p className="text-sm font-semibold text-primary">Include category summary</p>
-              <p className="text-[10px] text-secondary">Adds a breakdown by category</p>
+              <p className="text-sm font-semibold text-primary dark:text-[#E8ECE4]">Include category summary</p>
+              <p className="text-[10px] text-secondary dark:text-secondary/70">Adds a breakdown by category</p>
             </div>
           </label>
 

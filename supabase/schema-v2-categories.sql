@@ -161,21 +161,42 @@ BEGIN
     END IF;
 
     -- Seed default categories (skip if already exist for this user)
-    INSERT INTO public.categories (user_id, name, group_id, icon, color, sort_order)
-    SELECT user_record.id, cat.name, default_group_id, cat.icon, cat.color, cat.sort_order
+    INSERT INTO public.categories (user_id, name, group_id, icon, color, sort_order, type)
+    SELECT user_record.id, cat.name, default_group_id, cat.icon, cat.color, cat.sort_order, cat.type
     FROM (VALUES
-      ('Food', '🍔', '#10B981', 0),
-      ('Transport', '🚗', '#3B82F6', 1),
-      ('Utilities', '💡', '#F59E0B', 2),
-      ('Entertainment', '🎬', '#8B5CF6', 3),
-      ('Shopping', '🛒', '#EC4899', 4),
-      ('Health', '💊', '#EF4444', 5),
-      ('Other', '📦', '#6B7280', 6)
-    ) AS cat(name, icon, color, sort_order)
+      ('Food', '🍔', '#10B981', 0, 'expense'),
+      ('Transport', '🚗', '#3B82F6', 1, 'expense'),
+      ('Utilities', '💡', '#F59E0B', 2, 'expense'),
+      ('Entertainment', '🎬', '#8B5CF6', 3, 'expense'),
+      ('Shopping', '🛒', '#EC4899', 4, 'expense'),
+      ('Health', '💊', '#EF4444', 5, 'expense'),
+      ('Other', '📦', '#6B7280', 6, 'expense')
+    ) AS cat(name, icon, color, sort_order, type)
     WHERE NOT EXISTS (
       SELECT 1 FROM public.categories c2
       WHERE c2.user_id = user_record.id AND LOWER(c2.name) = LOWER(cat.name)
     );
+
+    -- Create Income group if missing
+    INSERT INTO public.category_groups (user_id, name, sort_order)
+    SELECT user_record.id, 'Income', 1
+    WHERE NOT EXISTS (
+      SELECT 1 FROM public.category_groups WHERE user_id = user_record.id AND name = 'Income'
+    );
+
+    -- Seed default income categories
+    INSERT INTO public.categories (user_id, name, group_id, icon, color, sort_order, type)
+    SELECT user_record.id, cat.name, cg.id, cat.icon, cat.color, cat.sort_order, cat.type
+    FROM public.category_groups cg
+    CROSS JOIN (VALUES
+      ('Salary', '💼', '#10B981', 0, 'income'),
+      ('Gift', '🎁', '#3B82F6', 1, 'income')
+    ) AS cat(name, icon, color, sort_order, type)
+    WHERE cg.user_id = user_record.id AND cg.name = 'Income'
+      AND NOT EXISTS (
+        SELECT 1 FROM public.categories c2
+        WHERE c2.user_id = user_record.id AND LOWER(c2.name) = LOWER(cat.name)
+      );
   END LOOP;
 END $$;
 

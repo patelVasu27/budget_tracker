@@ -11,21 +11,21 @@ export function BalanceCard({ title, amount, variant }: BalanceCardProps) {
     switch (variant) {
       case 'income':
         return {
-          bg: 'bg-surface hover:border-accent-green/20',
+          bg: 'bg-white/70 dark:bg-[#1B2A1E]/60 hover:border-accent-green/20',
           icon: 'bg-accent-green/10 text-accent-green',
-          text: 'text-primary',
+          text: 'text-primary dark:text-[#E8ECE4]',
         }
       case 'expense':
         return {
-          bg: 'bg-surface hover:border-accent-red/20',
+          bg: 'bg-white/70 dark:bg-[#1B2A1E]/60 hover:border-accent-red/20',
           icon: 'bg-accent-red/10 text-accent-red',
-          text: 'text-primary',
+          text: 'text-primary dark:text-[#E8ECE4]',
         }
       case 'balance':
         return {
           bg: isPositive 
-            ? 'bg-accent-green/[0.03] border-accent-green/20 hover:border-accent-green/40 shadow-sm' 
-            : 'bg-accent-red/[0.03] border-accent-red/20 hover:border-accent-red/40 shadow-sm',
+            ? 'bg-accent-green/[0.03] dark:bg-accent-green/[0.05] border-accent-green/20 hover:border-accent-green/40 shadow-sm' 
+            : 'bg-accent-red/[0.03] dark:bg-accent-red/[0.05] border-accent-red/20 hover:border-accent-red/40 shadow-sm',
           icon: isPositive ? 'bg-accent-green/10 text-accent-green' : 'bg-accent-red/10 text-accent-red',
           text: isPositive ? 'text-accent-green' : 'text-accent-red',
         }

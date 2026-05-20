@@ -51,9 +51,13 @@ SimpleBudget is a minimalist, free, and open-source web application designed for
 - **One-click expense entry** — Add expenses with category, amount, and date in seconds.
 - **Voice input & Natural Language Processing** — Hold the mic button and say "spent 400 on food" — no typing required (uses browser-native Web Speech API with smart phonetic numbers parsing, semantic category matching, and confirm-before-save).
 - **Monthly dashboard** — See income, expenses, and remaining balance at a glance.
+- **Sleek Dark Mode** — Premium, tailored dark theme throughout the entire app, matching HSL colors and organic mesh patterns with an instant theme toggle.
+- **Guest Mode local categories & CRUD** — Full LocalStorage seeding and offline CRUD operations for guest users, matching the robust Supabase database schemas.
+- **Delightful Hover Tooltips** — Reusable, accessible animated tooltips guiding users through actions, speech prompts, and settings.
 - **Dynamic target income & settings** — Configure your target monthly income, specific month, and year with automatic remaining balance updates.
 - **Custom Category Manager** — Create, update, and delete categories directly from the dashboard, personalized with curated Lucide icons.
 - **Advanced Excel & CSV Exports** — Export monthly transactions to beautifully structured Excel spreadsheets (via SheetJS) or standard CSV downloads.
+- **App Branding & Custom Favicon** — Custom branded SimpleBudget logo and favicon, replacing generic defaults across the app.
 - **Edit & delete** — Fix mistakes with two-click delete confirmation.
 - **Authentication** — Secure email/password authentication powered by Supabase.
 - **Guest mode** — Try the app without signing up.
@@ -75,6 +79,7 @@ SimpleBudget is a minimalist, free, and open-source web application designed for
     │   │   ├── CategoryIcon.tsx
     │   │   ├── ErrorBoundary.tsx
     │   │   ├── ExportModal.tsx
+    │   │   ├── Tooltip.tsx
     │   │   ├── TransactionList.tsx
     │   │   └── VoiceMicButton.tsx
     │   ├── features/
@@ -89,7 +94,8 @@ SimpleBudget is a minimalist, free, and open-source web application designed for
     │   │   ├── export.ts
     │   │   └── supabase.ts
     │   ├── stores/
-    │   │   └── authStore.ts
+    │   │   ├── authStore.ts
+    │   │   └── themeStore.ts
     │   ├── types/
     │   │   └── index.ts
     │   ├── App.tsx

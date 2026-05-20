@@ -6,12 +6,20 @@
 
 @layer base {
   body {
-    @apply bg-background text-primary antialiased;
+    @apply bg-background text-primary antialiased transition-colors duration-300;
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   }
 
+  .dark body {
+    @apply bg-[#0F1410] text-[#E8ECE4];
+  }
+
   * {
-    @apply border-border;
+    @apply border-border transition-colors duration-200;
+  }
+
+  .dark * {
+    @apply border-[#1B2A1E];
   }
 
   h1, h2, h3, h4, .font-serif {
@@ -22,7 +30,7 @@
 @layer components {
   .btn-primary {
     @apply px-5 py-2.5 bg-accent-green text-white font-semibold rounded-xl
-           hover:bg-[#1E4D38] active:scale-[0.97] hover:shadow-lg hover:shadow-accent-green/10
+           hover:bg-[#1E4D38] active:scale-[0.97] hover:shadow-lg hover:shadow-accent-green/20
            transition-all duration-200 ease-out
            disabled:opacity-50 disabled:cursor-not-allowed;
   }
@@ -33,6 +41,10 @@
            hover:shadow-sm transition-all duration-200 ease-out;
   }
 
+  .dark .btn-secondary {
+    @apply bg-[#1B2A1E] text-[#E8ECE4] border-[#2D3E30] hover:bg-[#253528] hover:border-[#3A4D3D];
+  }
+
   .input-field {
     @apply w-full px-4 py-2.5 bg-white border border-[#D5DCD0] rounded-xl
            text-primary placeholder:text-secondary/50
@@ -40,14 +52,38 @@
            transition-all duration-200 ease-out;
   }
 
+  .dark .input-field {
+    @apply bg-[#1B2A1E] border-[#2D3E30] text-[#E8ECE4] focus:ring-accent-green/10;
+  }
+
   .card {
-    @apply bg-surface rounded-2xl shadow-card border border-[#E8ECE4]
-           hover:border-[#E1E7DB] transition-all duration-300 ease-out;
+    @apply bg-white/70 backdrop-blur-md rounded-2xl shadow-card border border-white/40
+           hover:border-white/60 transition-all duration-300 ease-out;
+  }
+
+  .dark .card {
+    @apply bg-[#1B2A1E]/60 border-white/5 shadow-[0_4px_20px_rgba(0,0,0,0.3)];
   }
 
   .card-elevated {
-    @apply bg-surface rounded-2xl shadow-elevated border border-[#E1E7DB]
-           hover:border-[#D8E0D1] transition-all duration-300 ease-out;
+    @apply bg-white/80 backdrop-blur-lg rounded-2xl shadow-elevated border border-white/60
+           hover:border-white/80 transition-all duration-300 ease-out;
+  }
+
+  .dark .card-elevated {
+    @apply bg-[#1B2A1E]/80 border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)];
+  }
+
+  .glass-nav {
+    @apply bg-white/70 dark:bg-[#0F1410]/70 backdrop-blur-xl border-b border-white/20 dark:border-white/5;
+  }
+
+  .glow-outline {
+    @apply ring-0 ring-accent-green/0 transition-all duration-300;
+  }
+
+  .glow-outline:focus-within, .glow-outline:active {
+    @apply ring-4 ring-accent-green/20 border-accent-green/40 shadow-[0_0_20px_rgba(45,106,79,0.15)];
   }
 }
 
