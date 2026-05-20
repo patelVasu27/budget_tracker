@@ -79,26 +79,26 @@ export function VoiceMicButton({ onResult, onError, isDisabled }: VoiceMicButton
           toggleRecording()
         }}
         disabled={isDisabled}
-        className={`p-3 rounded-xl transition-all duration-200 ${
+        className={`p-3 rounded-xl transition-all duration-300 active:scale-95 ${
           isListening
-            ? 'bg-accent-red/10 text-accent-red animate-pulse-mic'
-            : 'bg-primary/5 text-secondary hover:bg-primary/10 hover:text-primary'
+            ? 'bg-accent-green/10 text-accent-green animate-pulse-mic'
+            : 'bg-[#EEF1EB] text-secondary hover:bg-[#E1E6DC] hover:text-primary'
         }`}
         role="button"
         aria-pressed={isListening}
         aria-disabled={isDisabled || undefined}
         aria-label={isListening ? 'Tap to stop recording' : 'Tap to record expense by voice'}
       >
-        <Mic className={`w-5 h-5 transition-transform duration-200 ${isListening ? 'scale-110' : ''}`} aria-hidden="true" />
+        <Mic className={`w-5 h-5 transition-transform duration-300 ${isListening ? 'scale-110' : ''}`} aria-hidden="true" />
       </button>
-      <div className={`absolute top-full mt-1.5 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md text-[10px] font-medium whitespace-nowrap pointer-events-none transition-all duration-200 min-w-[120px] text-center ${
+      <div className={`absolute top-full mt-2.5 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap pointer-events-none transition-all duration-250 shadow-md min-w-[140px] text-center z-20 ${
         isListening
-          ? 'bg-accent-red/10 text-accent-red opacity-100'
-          : 'bg-primary/5 text-secondary opacity-0 group-hover:opacity-100'
+          ? 'bg-accent-green text-white scale-100 opacity-100'
+          : 'bg-primary text-white scale-95 opacity-0 group-hover:opacity-100'
       }`}>
         {isListening 
           ? (transcript || 'Listening...') 
-          : 'Say amount like 350 or 500'}
+          : 'Say: Rs. 350 on Groceries'}
       </div>
     </div>
   )

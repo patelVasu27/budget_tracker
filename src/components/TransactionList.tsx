@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { format } from 'date-fns'
 import { Pencil, Trash2, Check } from 'lucide-react'
-import type { Transaction, Category } from '../types'
+import { CategoryIcon } from './CategoryIcon'
+import type { Transaction } from '../types'
 
 interface TransactionListProps {
   transactions: Transaction[]
@@ -9,15 +10,6 @@ interface TransactionListProps {
   onDelete?: (transaction: Transaction) => void
 }
 
-const CATEGORY_ICONS: Record<Category, string> = {
-  Food: '🍽️',
-  Transport: '🚗',
-  Utilities: '💡',
-  Entertainment: '🎬',
-  Shopping: '🛍️',
-  Health: '💊',
-  Other: '📦',
-}
 
 export function TransactionList({ transactions, onEdit, onDelete }: TransactionListProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -61,34 +53,32 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
   }
 
   return (
-    <div className="space-y-2" role="list" aria-label="Transaction list">
+    <div className="space-y-1.5" role="list" aria-label="Transaction list">
       {transactions.map((tx) => (
         <div
           key={tx.id}
-          className="group flex items-center gap-4 p-3 rounded-xl hover:bg-primary/[0.02] transition-colors duration-150"
+          className="group flex items-center gap-4 p-3.5 rounded-2xl hover:bg-[#F9FAF8] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(27,42,30,0.02)] transition-all duration-300 ease-out border border-transparent hover:border-[#E8ECE4]"
           role="listitem"
         >
-          <div className="flex-shrink-0 w-10 h-10 bg-primary/[0.03] rounded-xl flex items-center justify-center text-lg" aria-hidden="true">
-            {CATEGORY_ICONS[tx.category as Category] || '📦'}
-          </div>
+          <CategoryIcon category={tx.category} />
           
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-primary truncate">{tx.category}</p>
-            <p className="text-sm text-secondary truncate">
+            <p className="font-semibold text-primary text-sm leading-snug">{tx.category}</p>
+            <p className="text-xs text-secondary mt-0.5 truncate font-sans">
               {format(new Date(tx.date), 'MMM d, yyyy')}
-              {tx.note && ` · ${tx.note}`}
+              {tx.note && <span className="text-secondary/60"> · {tx.note}</span>}
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-             <span className="font-semibold text-accent-red tabular-nums" aria-label={`Minus ₹${tx.amount.toFixed(2)}`}>
+          <div className="flex items-center gap-3">
+             <span className="font-bold text-accent-red font-display text-lg tabular-nums" aria-label={`Minus ₹${tx.amount.toFixed(2)}`}>
                 -₹{tx.amount.toFixed(2)}
              </span>
             
             {onEdit && (
               <button
                 onClick={() => onEdit(tx)}
-                className="p-2 text-secondary/40 hover:text-primary hover:bg-primary/5 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                className="p-2 text-secondary/40 hover:text-primary hover:bg-primary/5 rounded-lg opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all duration-200"
                 aria-label={`Edit ${tx.category} expense`}
               >
                 <Pencil className="w-4 h-4" aria-hidden="true" />
@@ -98,9 +88,9 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
             {onDelete && (
               <button
                 onClick={() => handleDeleteClick(tx)}
-                className={`p-2 rounded-lg transition-all ${
+                className={`p-2 rounded-lg transition-all duration-200 focus:opacity-100 ${
                   deletingId === tx.id
-                    ? 'bg-accent-red text-white'
+                    ? 'bg-accent-red text-white shadow-sm hover:bg-[#C24E2E] animate-scale-in opacity-100'
                     : 'text-secondary/40 hover:text-accent-red hover:bg-accent-red/5 opacity-0 group-hover:opacity-100'
                 }`}
                 aria-label={deletingId === tx.id ? `Confirm delete ${tx.category} expense` : `Delete ${tx.category} expense`}

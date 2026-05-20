@@ -43,51 +43,64 @@ function App() {
   if (!user && !isGuest) {
     return (
       <>
-        <div className="min-h-screen bg-background relative overflow-hidden">
-          <div className="absolute inset-0 opacity-[0.03]" aria-hidden="true">
-            <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <div className="min-h-screen bg-[#F4F6F0] relative overflow-hidden flex items-center justify-center p-6">
+          {/* Natural Glow Mesh Background */}
+          <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+            <div 
+              className="absolute w-full h-full"
+              style={{
+                backgroundImage: `
+                  radial-gradient(circle at 15% 20%, rgba(45, 106, 79, 0.08) 0%, transparent 50%),
+                  radial-gradient(circle at 85% 75%, rgba(217, 167, 82, 0.06) 0%, transparent 50%),
+                  radial-gradient(circle at 50% 50%, rgba(90, 107, 94, 0.03) 0%, transparent 60%)
+                `
+              }}
+            />
+            {/* Elegant organic fine dots overlay */}
+            <svg className="w-full h-full opacity-[0.07]" viewBox="0 0 100 100" preserveAspectRatio="none">
               <defs>
-                <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-                  <path d="M 10 0 L 0 0 0 10" fill="none" stroke="currentColor" strokeWidth="0.5"/>
+                <pattern id="dot-grid" width="4" height="4" patternUnits="userSpaceOnUse">
+                  <circle cx="2" cy="2" r="0.5" fill="#1B2A1E" />
                 </pattern>
               </defs>
-              <rect width="100" height="100" fill="url(#grid)" />
+              <rect width="100%" height="100%" fill="url(#dot-grid)" />
             </svg>
           </div>
 
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/[0.02] rounded-full blur-3xl" />
-          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent-gold/[0.03] rounded-full blur-3xl" />
+          <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-[#2D6A4F]/[0.02] rounded-full blur-[120px] pointer-events-none" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[45vw] h-[45vw] bg-[#D9A752]/[0.02] rounded-full blur-[120px] pointer-events-none" />
 
-          <div className="relative max-w-xl mx-auto px-6 py-32 flex flex-col items-center text-center">
-            <div className="mb-6 p-4 bg-primary/5 rounded-2xl" aria-hidden="true">
-              <svg className="w-12 h-12 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <div className="relative max-w-xl w-full mx-auto px-8 py-12 bg-white/60 backdrop-blur-md rounded-[32px] border border-white/80 shadow-elevated text-center flex flex-col items-center animate-slide-up">
+            <div className="mb-8 p-4 bg-[#2D6A4F]/5 text-[#2D6A4F] rounded-2xl animate-scale-in" aria-hidden="true">
+              <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
 
-            <h1 className="text-4xl font-semibold tracking-tight text-primary mb-3">
-              SimpleBudget
+            <h1 className="text-4xl sm:text-5xl font-display font-medium tracking-tight text-[#1B2A1E] mb-4">
+              Simple<span className="italic font-normal font-serif text-[#2D6A4F]">Budget</span>
             </h1>
-            <p className="text-lg text-secondary max-w-sm mx-auto mb-10">
-              Track your monthly expenses in seconds. No complicated features—just your balance, at a glance.
+            
+            <p className="text-base sm:text-lg text-secondary max-w-sm mx-auto mb-10 leading-relaxed text-balance">
+              Log an expense and see your remaining balance in <span className="font-semibold text-accent-green">under 5 seconds</span>. Minimalist, private, & free.
             </p>
 
-            <div className="flex flex-col gap-3 w-full max-w-xs">
+            <div className="flex flex-col gap-3.5 w-full max-w-[280px]">
               <button
                 onClick={() => setShowAuthModal(true)}
-                className="btn-primary py-3.5 text-base shadow-lg shadow-primary/10"
+                className="btn-primary py-3.5 text-base shadow-md active:scale-[0.96] transition-transform"
               >
                 Get Started
               </button>
               <button
                 onClick={handleGuestContinue}
-                className="btn-secondary py-3.5 text-base"
+                className="btn-secondary py-3.5 text-base active:scale-[0.96] transition-transform"
               >
                 Continue as Guest
               </button>
             </div>
 
-            <p className="mt-8 text-xs text-secondary/70">
+            <p className="mt-8 text-xs text-secondary/60 font-medium">
               Free forever • No credit card required
             </p>
           </div>
