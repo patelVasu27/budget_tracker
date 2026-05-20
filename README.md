@@ -8,7 +8,6 @@
     <em>Track your monthly expenses in seconds. No complicated features — just your balance, at a glance.</em>
 </p>
 <p align="center">
-	<img src="https://img.shields.io/badge/license-MIT-0080ff?style=flat" alt="license">
 	<img src="https://img.shields.io/badge/version-1.0.0-0080ff?style=flat&logo=git&logoColor=white" alt="version">
 	<img src="https://img.shields.io/badge/top_language-TypeScript-0080ff?style=flat" alt="repo-top-language">
 </p>
