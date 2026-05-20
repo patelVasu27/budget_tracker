@@ -318,7 +318,7 @@ const handleVoiceResult = (transcript: string) => {
           </div>
           
           <div className="flex items-center gap-2 sm:gap-4">
-            <Tooltip content={isDarkMode ? "Light Mode" : "Dark Mode"}>
+            <Tooltip content={isDarkMode ? "Light Mode" : "Dark Mode"} position="bottom">
               <button
                 onClick={toggleDarkMode}
                 className="p-2 text-secondary hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-[#EEF1EB] dark:hover:bg-white/5 rounded-xl transition-all active:scale-95"
@@ -328,7 +328,7 @@ const handleVoiceResult = (transcript: string) => {
               </button>
             </Tooltip>
 
-            <Tooltip content="Manage Categories">
+            <Tooltip content="Manage Categories" position="bottom">
               <button
                 onClick={() => setShowCategoryManager(true)}
                 className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-secondary hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-[#EEF1EB] dark:hover:bg-white/5 rounded-xl transition-all active:scale-95"
@@ -339,7 +339,7 @@ const handleVoiceResult = (transcript: string) => {
               </button>
             </Tooltip>
 
-            <Tooltip content="Log Out">
+            <Tooltip content="Log Out" position="bottom">
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-secondary hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-[#EEF1EB] dark:hover:bg-white/5 rounded-xl transition-all active:scale-95"
