@@ -8,7 +8,7 @@
     <em>Track your monthly expenses in seconds. No complicated features — just your balance, at a glance.</em>
 </p>
 <p align="center">
-	<img src="https://img.shields.io/badge/version-1.0.0-0080ff?style=flat&logo=git&logoColor=white" alt="version">
+	<img src="https://img.shields.io/badge/version-2.0.0-0080ff?style=flat&logo=git&logoColor=white" alt="version">
 	<img src="https://img.shields.io/badge/top_language-TypeScript-0080ff?style=flat" alt="repo-top-language">
 </p>
 <p align="center">
@@ -49,8 +49,11 @@ SimpleBudget is a minimalist, free, and open-source web application designed for
 ## 👾 Features
 
 - **One-click expense entry** — Add expenses with category, amount, and date in seconds.
-- **Voice input** — Hold the mic button and say "spent 400 on food" — no typing required (uses browser-native Web Speech API).
+- **Voice input & Natural Language Processing** — Hold the mic button and say "spent 400 on food" — no typing required (uses browser-native Web Speech API with smart phonetic numbers parsing, semantic category matching, and confirm-before-save).
 - **Monthly dashboard** — See income, expenses, and remaining balance at a glance.
+- **Dynamic target income & settings** — Configure your target monthly income, specific month, and year with automatic remaining balance updates.
+- **Custom Category Manager** — Create, update, and delete categories directly from the dashboard, personalized with curated Lucide icons.
+- **Advanced Excel & CSV Exports** — Export monthly transactions to beautifully structured Excel spreadsheets (via SheetJS) or standard CSV downloads.
 - **Edit & delete** — Fix mistakes with two-click delete confirmation.
 - **Authentication** — Secure email/password authentication powered by Supabase.
 - **Guest mode** — Try the app without signing up.
@@ -69,16 +72,21 @@ SimpleBudget is a minimalist, free, and open-source web application designed for
     │   │   ├── AddExpenseModal.tsx
     │   │   ├── AuthModal.tsx
     │   │   ├── BalanceCard.tsx
+    │   │   ├── CategoryIcon.tsx
     │   │   ├── ErrorBoundary.tsx
+    │   │   ├── ExportModal.tsx
     │   │   ├── TransactionList.tsx
     │   │   └── VoiceMicButton.tsx
     │   ├── features/
+    │   │   ├── CategoryManager.tsx
     │   │   └── Dashboard.tsx
     │   ├── hooks/
     │   │   ├── useAmountParser.ts
+    │   │   ├── useCategories.ts
     │   │   └── useVoiceCommand.ts
     │   ├── lib/
     │   │   ├── categoryMatcher.ts
+    │   │   ├── export.ts
     │   │   └── supabase.ts
     │   ├── stores/
     │   │   └── authStore.ts
@@ -88,6 +96,12 @@ SimpleBudget is a minimalist, free, and open-source web application designed for
     │   ├── index.css
     │   ├── main.tsx
     │   └── vite-env.d.ts
+    ├── supabase/
+    │   ├── migrations/
+    │   │   └── 20260520000000_add-income-tracking.sql
+    │   ├── rls-only.sql
+    │   ├── schema-v2-categories.sql
+    │   └── schema.sql
     ├── index.html
     ├── package.json
     ├── postcss.config.js
@@ -153,7 +167,8 @@ Execute the test suite using Vitest:
 - [X] **Phase 2: Expense Entry & Transactions** - Create basic manual input forms and dynamic lists.
 - [X] **Phase 3: Voice Entry Integration** - Add Speech-to-Text natural language parsing capabilities.
 - [X] **Phase 4: Polish & Launch** - Final UX tuning, CI/CD pipeline, and Version 1.0 Release.
-- [ ] **Phase 5: Future Enhancements** - Visual improvements, theming, and potential integrations.
+- [X] **Phase 5: Version 2.0 Enhancements** - Custom Category Manager, monthly settings & income tracking, robust voice improvements, and advanced Excel/CSV exports.
+- [ ] **Phase 6: Version 3.0 Future Roadmap** - Automated recurring transactions, multi-currency support, visual reporting, and theme customization.
 
 ---
 
