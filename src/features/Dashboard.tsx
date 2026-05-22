@@ -306,13 +306,13 @@ const handleVoiceResult = (transcript: string) => {
   return (
     <div className="min-h-screen bg-background dark:bg-[#0F1410] transition-colors duration-300">
       <header className="glass-nav sticky top-0 z-30 shadow-[0_1px_8px_rgba(27,42,30,0.01)]">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center max-sm:flex-wrap max-sm:gap-y-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div className="overflow-hidden rounded-xl border border-[#E1E7DB]/50 dark:border-white/10 shadow-sm flex-shrink-0" aria-hidden="true">
               <img src="/logo.png" alt="Logo" className="w-9 h-9 object-cover" />
             </div>
             <div>
-              <h1 className="text-lg font-black text-primary dark:text-[#E8ECE4] font-display tracking-tight select-none">SimpleBudget</h1>
+              <h1 className="text-sm sm:text-lg font-black text-primary dark:text-[#E8ECE4] font-display tracking-tight select-none">SimpleBudget</h1>
               <p className="text-[10px] font-bold tracking-widest text-secondary/80 dark:text-secondary uppercase mt-0.5">{format(new Date(), 'MMMM yyyy')}</p>
             </div>
           </div>
@@ -331,7 +331,7 @@ const handleVoiceResult = (transcript: string) => {
             <Tooltip content="Manage Categories" position="bottom">
               <button
                 onClick={() => setShowCategoryManager(true)}
-                className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-secondary hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-[#EEF1EB] dark:hover:bg-white/5 rounded-xl transition-all active:scale-95"
+                className="flex items-center gap-2 max-sm:gap-1.5 px-3.5 max-sm:px-2 py-2 text-xs font-bold uppercase tracking-wider text-secondary hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-[#EEF1EB] dark:hover:bg-white/5 rounded-xl transition-all active:scale-95"
                 aria-label="Manage categories"
               >
                 <Tags className="w-4 h-4" aria-hidden="true" />
@@ -342,7 +342,7 @@ const handleVoiceResult = (transcript: string) => {
             <Tooltip content="Log Out" position="bottom">
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-secondary hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-[#EEF1EB] dark:hover:bg-white/5 rounded-xl transition-all active:scale-95"
+                className="flex items-center gap-2 max-sm:gap-1.5 px-3.5 max-sm:px-2 py-2 text-xs font-bold uppercase tracking-wider text-secondary hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-[#EEF1EB] dark:hover:bg-white/5 rounded-xl transition-all active:scale-95"
                 aria-label="Log out of your account"
               >
                 <LogOut className="w-4 h-4" aria-hidden="true" />
@@ -353,9 +353,9 @@ const handleVoiceResult = (transcript: string) => {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-8" aria-label="Dashboard">
-        <div className="grid md:grid-cols-[320px_1fr] gap-8">
-          <aside className="space-y-4" aria-label="Monthly balance summary">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8" aria-label="Dashboard">
+        <div className="grid md:grid-cols-[320px_1fr] gap-6 sm:gap-8 min-w-0">
+          <aside className="space-y-4 min-w-0" aria-label="Monthly balance summary">
             <h2 className="text-xs font-bold text-secondary dark:text-secondary uppercase tracking-widest font-sans mb-1">Balance</h2>
             
             {editingIncome ? (
@@ -424,8 +424,8 @@ const handleVoiceResult = (transcript: string) => {
             </div>
           </aside>
 
-          <section aria-label="Recent transactions" className="space-y-4">
-            <div className="flex justify-between items-center">
+          <section aria-label="Recent transactions" className="space-y-4 min-w-0">
+            <div className="flex justify-between items-center max-sm:flex-wrap max-sm:gap-y-2">
               <h2 className="text-xs font-bold text-secondary dark:text-secondary uppercase tracking-widest font-sans mb-1">Recent Transactions</h2>
               <div className="flex items-center gap-2.5">
                 {voiceError && (
@@ -440,7 +440,7 @@ const handleVoiceResult = (transcript: string) => {
                 <Tooltip content="Export Data">
                   <button
                     onClick={() => setShowExportModal(true)}
-                    className="flex items-center gap-2 px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider text-secondary hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-[#EEF1EB] dark:hover:bg-white/5 rounded-xl transition-all active:scale-95"
+                    className="flex items-center gap-2 max-sm:gap-1.5 px-3.5 max-sm:px-2 py-2.5 max-sm:py-2 text-xs font-bold uppercase tracking-wider text-secondary hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-[#EEF1EB] dark:hover:bg-white/5 rounded-xl transition-all active:scale-95"
                     aria-label="Export transactions"
                   >
                     <Download className="w-4 h-4" aria-hidden="true" />
@@ -449,7 +449,7 @@ const handleVoiceResult = (transcript: string) => {
                 </Tooltip>
                 <button 
                   onClick={() => setShowExpenseModal(true)}
-                  className="btn-primary flex items-center gap-2 text-sm shadow-md"
+                  className="btn-primary flex items-center gap-2 text-sm max-sm:text-xs shadow-md max-sm:px-3 max-sm:py-2"
                   aria-label="Add a new transaction"
                 >
                   <Plus className="w-4 h-4" aria-hidden="true" />

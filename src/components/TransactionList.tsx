@@ -77,7 +77,7 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
       {transactions.map((tx) => (
         <div
           key={tx.id}
-          className="group flex items-center gap-4 p-3.5 rounded-2xl hover:bg-[#F9FAF8] dark:hover:bg-white/[0.02] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(27,42,30,0.02)] transition-all duration-300 ease-out border border-transparent hover:border-[#E8ECE4] dark:hover:border-white/5"
+          className="group flex items-center gap-4 p-3 sm:p-3.5 rounded-2xl hover:bg-[#F9FAF8] dark:hover:bg-white/[0.02] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(27,42,30,0.02)] transition-all duration-300 ease-out border border-transparent hover:border-[#E8ECE4] dark:hover:border-white/5"
           role="listitem"
         >
           <CategoryIcon category={tx.category} />
@@ -92,7 +92,7 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
 
           <div className="flex items-center gap-3">
              <span
-               className={`font-bold font-display text-lg tabular-nums ${
+               className={`font-bold font-display text-base sm:text-lg tabular-nums ${
                  tx.type === 'income' ? 'text-accent-green' : 'text-accent-red'
                }`}
                aria-label={`${tx.type === 'income' ? 'Plus' : 'Minus'} ₹${tx.amount.toFixed(2)}`}

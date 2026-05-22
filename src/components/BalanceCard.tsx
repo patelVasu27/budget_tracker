@@ -70,7 +70,7 @@ export function BalanceCard({ title, amount, variant }: BalanceCardProps) {
           {getIcon()}
         </div>
       </div>
-      <p className={`text-2xl font-bold font-display mt-4 tracking-tight leading-none ${styles.text}`} aria-label={formattedAmount}>
+      <p className={`text-xl sm:text-2xl font-bold font-display mt-4 tracking-tight leading-none ${styles.text}`} aria-label={formattedAmount}>
         {formattedAmount}
       </p>
     </div>
