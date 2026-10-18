@@ -12,8 +12,8 @@
     "auto_advance": false
   },
   "project": {
-    "name": "SimpleBudget",
-    "code": "SB001",
+    "name": "Budget Pulse",
+    "code": "BP001",
     "version": "1.0.0",
     "mode": "mvp"
   }

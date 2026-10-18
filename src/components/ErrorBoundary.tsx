@@ -42,7 +42,7 @@ export class ErrorBoundary extends Component<Props, State> {
             Something went wrong
           </h1>
           <p className="mb-8 max-w-md text-center text-secondary">
-            SimpleBudget encountered an unexpected error. Please try again.
+            Budget Pulse encountered an unexpected error. Please try again.
           </p>
           <button
             type="button"

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
-import { X } from 'lucide-react'
+import { X, Lock, Mail } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 interface AuthModalProps {
@@ -111,95 +111,150 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
       aria-labelledby="auth-modal-heading"
       aria-describedby="auth-modal-subtitle"
     >
-      <div className="absolute inset-0 bg-primary/20 backdrop-blur-sm animate-fade-in" onClick={onClose} aria-label="Close" />
-      <div ref={modalRef} className="relative bg-white rounded-3xl shadow-modal w-full max-w-md mx-4 p-8 border border-[#E8ECE4] animate-scale-in">
+      <div className="absolute inset-0 bg-primary/20 dark:bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose} aria-label="Close" />
+      <div ref={modalRef} className="relative bg-surface dark:bg-[#1B2A1E] rounded-2xl shadow-modal w-full max-w-2xl mx-4 overflow-hidden animate-scale-in border border-white/20 dark:border-white/5">
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 text-secondary hover:text-primary hover:bg-[#F4F6F0] rounded-xl transition-all duration-200"
+          className="absolute top-4 right-4 p-2 text-secondary hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-primary/5 dark:hover:bg-white/5 rounded-lg transition-colors z-10"
           aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <h2 id="auth-modal-heading" className="text-3xl font-display font-medium text-primary mb-2">
-          {isLogin ? 'Welcome Back' : 'Create Account'}
-        </h2>
-        <p className="text-sm text-secondary mb-6">
-          {isLogin ? 'Sign in to access your budget tracker' : 'Get started tracking in under 5 seconds'}
-        </p>
-        <p id="auth-modal-subtitle" className="sr-only">
-          {isLogin ? 'Sign in to your account' : 'Create a new account'}
-        </p>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-1.5">
-              Email Address
-            </label>
-            <input
-              type="email"
-              {...register('email', { required: 'Email is required' })}
-              className="input-field"
-              placeholder="you@example.com"
-              aria-label="Email address"
-              aria-required="true"
-              aria-invalid={!!errors.email}
-            />
-            {errors.email && (
-              <p className="mt-1.5 text-xs text-accent-red font-medium" role="alert">Email is required</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-1.5">
-              Password
-            </label>
-            <input
-              type="password"
-              {...register('password', { required: true, minLength: 6 })}
-              className="input-field"
-              placeholder="Min 6 characters"
-              aria-label="Password"
-              aria-required="true"
-              aria-invalid={!!errors.password}
-            />
-            {errors.password && (
-              <p className="mt-1.5 text-xs text-accent-red font-medium" role="alert">
-                Password must be at least 6 characters
-              </p>
-            )}
-          </div>
-
-          {error && (
-            <div className="p-3.5 bg-accent-red/10 text-accent-red rounded-xl text-xs font-medium" role="alert" aria-live="polite">
-              {error}
+        <div className="flex flex-col lg:flex-row">
+          {/* Brand Panel - Left side on desktop */}
+          <div className="hidden lg:flex lg:w-1/2 bg-accent-green/5 dark:bg-accent-green/10 p-10 lg:p-12 flex-col items-center justify-center text-center relative overflow-hidden">
+            <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]" aria-hidden="true">
+              <svg className="w-full h-full" viewBox="0 0 200 200">
+                <text x="100" y="120" fontFamily="Fraunces, Georgia, serif" fontSize="160" fontWeight="700" textAnchor="middle" dominantBaseline="central" fill="currentColor">₹</text>
+              </svg>
             </div>
-          )}
+            <div className="relative z-10 space-y-6">
+              <div className="mb-2">
+                <img src="/logo.png" alt="Budget Pulse" className="w-16 h-16 mx-auto object-contain" />
+              </div>
+              <h3 className="text-2xl sm:text-3xl font-display font-medium text-primary dark:text-[#E8ECE4]">
+                Welcome back to your ledger
+              </h3>
+              <p className="text-secondary dark:text-secondary/70 max-w-sm mx-auto leading-relaxed">
+                {isLogin
+                  ? 'Sign in to access your Budget Pulse account. Your expenses, income, and balance — all in one place.'
+                  : 'Create your Budget Pulse account. Start tracking in under 5 seconds with voice or tap.'}
+              </p>
+              <div className="mt-8 flex items-center gap-3 text-xs text-secondary/60 dark:text-secondary/40">
+                <span className="flex items-center gap-1.5">
+                  <Lock className="w-4 h-4" aria-hidden="true" />
+                  Encrypted & private
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Mail className="w-4 h-4" aria-hidden="true" />
+                  No spam, ever
+                </span>
+              </div>
+            </div>
+          </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="btn-primary w-full py-3 text-base shadow-sm active:scale-[0.96] transition-transform"
-            aria-label={isLogin ? 'Sign in' : 'Create account'}
-          >
-            {isLoading ? 'Please wait...' : isLogin ? 'Log In' : 'Sign Up'}
-          </button>
-        </form>
+          {/* Form Panel - Right side on desktop, full on mobile */}
+          <div className="flex-1 p-6 lg:p-10 flex flex-col justify-center">
+            <div className="w-full max-w-md mx-auto">
+              <h2 id="auth-modal-heading" className="text-2xl sm:text-3xl font-display font-medium text-primary dark:text-[#E8ECE4] mb-2 text-center lg:text-left">
+                {isLogin ? 'Welcome Back' : 'Create Account'}
+              </h2>
+              <p className="text-sm text-secondary dark:text-secondary/70 mb-8 text-center lg:text-left">
+                {isLogin ? 'Sign in to access your budget tracker' : 'Get started tracking in under 5 seconds'}
+              </p>
+              <p id="auth-modal-subtitle" className="sr-only">
+                {isLogin ? 'Sign in to your account' : 'Create a new account'}
+              </p>
 
-        <p className="mt-6 text-center text-sm text-secondary font-medium">
-          {isLogin ? "Don't have an account? " : 'Already have an account? '}
-          <button
-            onClick={() => {
-              setIsLogin(!isLogin)
-              setError(null)
-              reset()
-            }}
-            className="text-accent-green hover:text-[#1E4D38] hover:underline font-semibold"
-            aria-label={isLogin ? 'Switch to sign up' : 'Switch to log in'}
-          >
-            {isLogin ? 'Sign up' : 'Log in'}
-          </button>
-        </p>
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-secondary dark:text-secondary/70 mb-2">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary/40 dark:text-secondary/50 pointer-events-none" aria-hidden="true" />
+                    <input
+                      type="email"
+                      {...register('email', { required: 'Email is required' })}
+                      className="input-field pl-11"
+                      placeholder="you@example.com"
+                      aria-label="Email address"
+                      aria-required="true"
+                      aria-invalid={!!errors.email}
+                      autoComplete="email"
+                    />
+                  </div>
+                  {errors.email && (
+                    <p className="mt-1.5 text-sm text-accent-red font-medium" role="alert">Email is required</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-secondary dark:text-secondary/70 mb-2">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary/40 dark:text-secondary/50 pointer-events-none" aria-hidden="true" />
+                    <input
+                      type="password"
+                      {...register('password', { required: true, minLength: 6 })}
+                      className="input-field pl-11"
+                      placeholder="Min 6 characters"
+                      aria-label="Password"
+                      aria-required="true"
+                      aria-invalid={!!errors.password}
+                      autoComplete={isLogin ? 'current-password' : 'new-password'}
+                    />
+                  </div>
+                  {errors.password && (
+                    <p className="mt-1.5 text-sm text-accent-red font-medium" role="alert">
+                      Password must be at least 6 characters
+                    </p>
+                  )}
+                </div>
+
+                {error && (
+                  <div className="p-3.5 bg-accent-red/10 text-accent-red rounded-xl text-sm font-medium" role="alert" aria-live="polite">
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="btn-primary w-full py-3.5 text-base shadow-sm active:scale-[0.96] transition-transform mt-2"
+                  aria-label={isLogin ? 'Sign in' : 'Create account'}
+                >
+                  {isLoading ? (
+                    <>
+                      <svg className="animate-spin w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Please wait...
+                    </>
+                  ) : isLogin ? 'Log In' : 'Sign Up'}
+                </button>
+              </form>
+
+              <p className="mt-6 text-center text-sm text-secondary font-medium">
+                {isLogin ? "Don't have an account? " : 'Already have an account? '}
+                <button
+                  onClick={() => {
+                    setIsLogin(!isLogin)
+                    setError(null)
+                    reset()
+                  }}
+                  className="text-accent-green hover:text-[#1E4D38] hover:underline font-semibold transition-colors"
+                  aria-label={isLogin ? 'Switch to sign up' : 'Switch to log in'}
+                >
+                  {isLogin ? 'Sign up' : 'Log in'}
+                </button>
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )

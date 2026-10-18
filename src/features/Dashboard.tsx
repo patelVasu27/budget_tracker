@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { format } from 'date-fns'
-import { Download, LogOut, Plus, Settings, Tags, Sun, Moon } from 'lucide-react'
+import { Download, LogOut, Plus, Settings, Tags, Sun, Moon, User, ChevronDown } from 'lucide-react'
 import { VoiceMicButton } from '../components/VoiceMicButton'
 import { parseAmount } from '../hooks/useAmountParser'
 import { matchCategory } from '../lib/categoryMatcher'
@@ -14,6 +14,7 @@ import { AddExpenseModal } from '../components/AddExpenseModal'
 import { CategoryManager } from './CategoryManager'
 import { ExportModal } from '../components/ExportModal'
 import { Tooltip } from '../components/Tooltip'
+import { useCategories } from '../hooks/useCategories'
 import type { Transaction, MonthlySettings } from '../types'
 
 export function Dashboard() {
@@ -31,10 +32,32 @@ export function Dashboard() {
   const [voiceError, setVoiceError] = useState<string | null>(null)
   const [retryCount, setRetryCount] = useState(0)
   const MAX_RETRIES = 1
+  const [showUserMenu, setShowUserMenu] = useState(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
 
   const currentMonth = new Date().getMonth() + 1
   const currentYear = new Date().getFullYear()
   const activeUserId = isGuest ? 'guest' : user?.id
+  const { data: allCategories = [] } = useCategories(activeUserId)
+  const categoryMeta: Record<string, { color?: string | null; icon?: string | null }> = {}
+  allCategories.forEach(c => {
+    const meta = { color: c.color, icon: c.icon }
+    categoryMeta[c.id] = meta
+    categoryMeta[c.name.toLowerCase()] = meta
+  })
+
+  // Close user menu on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false)
+      }
+    }
+    if (showUserMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showUserMenu])
 
   const { data: settings } = useQuery<MonthlySettings | null>({
     queryKey: ['monthlySettings', activeUserId, currentMonth, currentYear],
@@ -303,52 +326,90 @@ const handleVoiceResult = (transcript: string) => {
     clearSession()
   }
 
+  const handleUserMenuLogout = () => {
+    setShowUserMenu(false)
+    handleLogout()
+  }
+
   return (
     <div className="min-h-screen bg-background dark:bg-[#0F1410] transition-colors duration-300">
       <header className="glass-nav sticky top-0 z-30 shadow-[0_1px_8px_rgba(27,42,30,0.01)]">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center max-sm:flex-wrap max-sm:gap-y-2">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="overflow-hidden rounded-xl border border-[#E1E7DB]/50 dark:border-white/10 shadow-sm flex-shrink-0" aria-hidden="true">
-              <img src="/logo.png" alt="Logo" className="w-9 h-9 object-cover" />
+              <img src="/logo.png" alt="Budget Pulse" className="w-10 h-10 object-contain" />
             </div>
             <div>
-              <h1 className="text-sm sm:text-lg font-black text-primary dark:text-[#E8ECE4] font-display tracking-tight select-none">SimpleBudget</h1>
-              <p className="text-[10px] font-bold tracking-widest text-secondary/80 dark:text-secondary uppercase mt-0.5">{format(new Date(), 'MMMM yyyy')}</p>
+              <h1 className="text-xl font-black text-primary dark:text-[#E8ECE4] font-display tracking-tight select-none">Budget Pulse</h1>
+              <p className="text-[11px] font-bold tracking-widest text-secondary/70 dark:text-secondary uppercase mt-0.5">{format(new Date(), 'MMMM yyyy')}</p>
             </div>
           </div>
           
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2">
             <Tooltip content={isDarkMode ? "Light Mode" : "Dark Mode"} position="bottom">
               <button
                 onClick={toggleDarkMode}
-                className="p-2 text-secondary hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-[#EEF1EB] dark:hover:bg-white/5 rounded-xl transition-all active:scale-95"
+                className="p-2.5 text-secondary hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-[#EEF1EB] dark:hover:bg-white/5 rounded-xl transition-all active:scale-95"
                 aria-label="Toggle dark mode"
               >
                 {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </button>
             </Tooltip>
 
-            <Tooltip content="Manage Categories" position="bottom">
+            <Tooltip content="Export Data" position="bottom">
               <button
-                onClick={() => setShowCategoryManager(true)}
-                className="flex items-center gap-2 max-sm:gap-1.5 px-3.5 max-sm:px-2 py-2 text-xs font-bold uppercase tracking-wider text-secondary hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-[#EEF1EB] dark:hover:bg-white/5 rounded-xl transition-all active:scale-95"
-                aria-label="Manage categories"
+                onClick={() => setShowExportModal(true)}
+                className="p-2.5 text-secondary hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-[#EEF1EB] dark:hover:bg-white/5 rounded-xl transition-all active:scale-95"
+                aria-label="Export transactions"
               >
-                <Tags className="w-4 h-4" aria-hidden="true" />
-                <span className="hidden sm:inline">Categories</span>
+                <Download className="w-5 h-5" aria-hidden="true" />
               </button>
             </Tooltip>
 
-            <Tooltip content="Log Out" position="bottom">
+            <Tooltip content="Manage Categories" position="bottom">
               <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 max-sm:gap-1.5 px-3.5 max-sm:px-2 py-2 text-xs font-bold uppercase tracking-wider text-secondary hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-[#EEF1EB] dark:hover:bg-white/5 rounded-xl transition-all active:scale-95"
-                aria-label="Log out of your account"
+                onClick={() => setShowCategoryManager(true)}
+                className="p-2.5 text-secondary hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-[#EEF1EB] dark:hover:bg-white/5 rounded-xl transition-all active:scale-95"
+                aria-label="Manage categories"
               >
-                <LogOut className="w-4 h-4" aria-hidden="true" />
-                <span className="hidden sm:inline">Logout</span>
+                <Tags className="w-5 h-5" aria-hidden="true" />
               </button>
             </Tooltip>
+
+            {/* User Menu Dropdown */}
+            <div className="relative" ref={userMenuRef}>
+              <Tooltip content="Account" position="bottom">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-2 p-2 text-secondary hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-[#EEF1EB] dark:hover:bg-white/5 rounded-xl transition-all active:scale-95"
+                  aria-label="Account menu"
+                  aria-expanded={showUserMenu}
+                  aria-haspopup="true"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-accent-green/10 flex items-center justify-center">
+                    <User className="w-4 h-4 text-accent-green" aria-hidden="true" />
+                  </div>
+                  <ChevronDown className="w-4 h-4 transition-transform duration-200" style={{ transform: showUserMenu ? 'rotate(180deg)' : 'rotate(0)' }} aria-hidden="true" />
+                </button>
+              </Tooltip>
+
+              {showUserMenu && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-surface dark:bg-[#1B2A1E] rounded-2xl shadow-modal border border-white/20 dark:border-white/5 overflow-hidden animate-scale-in z-50">
+                  <div className="px-4 py-3 border-b border-border-subtle dark:border-white/5">
+                    <p className="text-sm font-semibold text-primary dark:text-[#E8ECE4]">{user?.email || 'Guest User'}</p>
+                    <p className="text-xs text-secondary dark:text-secondary/70 mt-0.5">{isGuest ? 'Guest Mode' : 'Signed in'}</p>
+                  </div>
+                  <button
+                    onClick={handleUserMenuLogout}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-accent-red hover:bg-accent-red/5 dark:hover:bg-accent-red/10 transition-colors"
+                    aria-label="Log out"
+                  >
+                    <LogOut className="w-4 h-4" aria-hidden="true" />
+                    Log Out
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -412,13 +473,13 @@ const handleVoiceResult = (transcript: string) => {
             )}
 
             <div className="space-y-3.5">
-              <div className="glow-outline rounded-2xl">
+              <div className="glow-outline rounded-2xl animate-stagger-in stagger-1">
                 <BalanceCard title="Income" amount={totalIncome} variant="income" />
               </div>
-              <div className="glow-outline rounded-2xl">
+              <div className="glow-outline rounded-2xl animate-stagger-in stagger-2">
                 <BalanceCard title="Expenses" amount={totalExpenses} variant="expense" />
               </div>
-              <div className="glow-outline rounded-2xl">
+              <div className="glow-outline rounded-2xl animate-stagger-in stagger-3">
                 <BalanceCard title="Remaining" amount={remainingBalance} variant="balance" />
               </div>
             </div>
@@ -474,8 +535,9 @@ const handleVoiceResult = (transcript: string) => {
                   <span className="sr-only">Loading your data</span>
                 </div>
               ) : (
-                <TransactionList 
-                  transactions={transactions} 
+                <TransactionList
+                  transactions={transactions}
+                  categoryMeta={categoryMeta}
                   onEdit={handleEditTransaction}
                   onDelete={handleDeleteTransaction}
                 />
@@ -493,6 +555,7 @@ const handleVoiceResult = (transcript: string) => {
           }}
           editTransaction={editingTransaction}
           voicePrefill={voicePrefill}
+          currentBalance={remainingBalance}
         />
 
         <CategoryManager

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Mic, MicOff } from 'lucide-react'
 import { useVoiceCommand } from '../hooks/useVoiceCommand'
 
@@ -7,6 +7,13 @@ interface VoiceMicButtonProps {
   onError: (error: string) => void
   isDisabled?: boolean
 }
+
+const HINTS = [
+  'Say: ₹350 on groceries',
+  'Say: ₹250 on food',
+  'Say: Received ₹5000 salary',
+  'Say: ₹120 Uber ride',
+]
 
 export function VoiceMicButton({ onResult, onError, isDisabled }: VoiceMicButtonProps) {
   const {
@@ -19,6 +26,7 @@ export function VoiceMicButton({ onResult, onError, isDisabled }: VoiceMicButton
   } = useVoiceCommand()
 
   const wasListeningRef = useRef(false)
+  const [hintIndex, setHintIndex] = useState(0)
 
   useEffect(() => {
     if (wasListeningRef.current && !isListening && transcript) {
@@ -33,16 +41,22 @@ export function VoiceMicButton({ onResult, onError, isDisabled }: VoiceMicButton
     }
   }, [voiceError, onError])
 
+  useEffect(() => {
+    if (isListening) return
+    const id = setInterval(() => setHintIndex(i => (i + 1) % HINTS.length), 3000)
+    return () => clearInterval(id)
+  }, [isListening])
+
   if (!isSupported) {
     return (
       <div className="relative group">
         <button
           disabled
-          className="p-3 rounded-xl bg-gray-100 dark:bg-white/5 text-gray-400 cursor-not-allowed"
+          className="w-14 h-14 min-w-[56px] min-h-[56px] rounded-2xl bg-gray-100 dark:bg-white/5 text-gray-400 cursor-not-allowed flex items-center justify-center"
           aria-label="Voice input not available"
           aria-disabled="true"
         >
-          <MicOff className="w-5 h-5" aria-hidden="true" />
+          <MicOff className="w-6 h-6" aria-hidden="true" />
         </button>
       </div>
     )
@@ -53,11 +67,11 @@ export function VoiceMicButton({ onResult, onError, isDisabled }: VoiceMicButton
       <div className="relative group">
         <button
           disabled
-          className="p-3 rounded-xl bg-gray-100 dark:bg-white/5 text-amber-500 cursor-not-allowed"
-          aria-label="Voice input not available"
+          className="w-14 h-14 min-w-[56px] min-h-[56px] rounded-2xl bg-gray-100 dark:bg-white/5 text-amber-500 cursor-not-allowed flex items-center justify-center"
+          aria-label="Microphone not available"
           aria-disabled="true"
         >
-          <MicOff className="w-5 h-5" aria-hidden="true" />
+          <MicOff className="w-6 h-6" aria-hidden="true" />
         </button>
       </div>
     )
@@ -71,27 +85,46 @@ export function VoiceMicButton({ onResult, onError, isDisabled }: VoiceMicButton
           toggleRecording()
         }}
         disabled={isDisabled}
-        className={`p-3 rounded-xl transition-all duration-300 active:scale-95 ${
+        className={`w-14 h-14 min-w-[56px] min-h-[56px] rounded-2xl transition-all duration-300 active:scale-95 flex items-center justify-center focus-visible:outline-none ${
           isListening
-            ? 'bg-accent-green/10 text-accent-green animate-pulse-mic'
-            : 'bg-[#EEF1EB] dark:bg-white/5 text-secondary dark:text-secondary/70 hover:bg-[#E1E6DC] dark:hover:bg-white/10 hover:text-primary dark:hover:text-[#E8ECE4]'
-        }`}
-        role="button"
+            ? 'bg-accent-green text-white shadow-lg shadow-accent-green/25 animate-pulse-mic'
+            : 'bg-[#EEF1EB] dark:bg-white/5 text-secondary dark:text-secondary/70 hover:bg-[#E1E6DC] dark:hover:bg-white/10 hover:text-primary dark:hover:text-[#E8ECE4] ring-1 ring-accent-green/20'
+        } ${voiceError && !isListening ? 'ring-2 ring-accent-red/40' : ''}`}
         aria-pressed={isListening}
         aria-disabled={isDisabled || undefined}
         aria-label={isListening ? 'Tap to stop recording' : 'Tap to record expense by voice'}
       >
-        <Mic className={`w-5 h-5 transition-transform duration-300 ${isListening ? 'scale-110' : ''}`} aria-hidden="true" />
+        {isListening ? (
+          <span className="flex items-end gap-0.5 h-6" aria-hidden="true">
+            {[0, 1, 2, 3, 4].map(i => (
+              <span
+                key={i}
+                className="w-1 rounded-full bg-white animate-pulse"
+                style={{ height: `${12 + ((i * 7) % 12)}px`, animationDelay: `${i * 120}ms` }}
+              />
+            ))}
+          </span>
+        ) : (
+          <Mic className="w-6 h-6" aria-hidden="true" />
+        )}
       </button>
-      <div className={`absolute top-full mt-2.5 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap pointer-events-none transition-all duration-250 shadow-md min-w-[140px] text-center z-20 ${
-        isListening
-          ? 'bg-accent-green text-white scale-100 opacity-100'
-          : 'bg-primary dark:bg-accent-green text-white scale-95 opacity-0 group-hover:opacity-100'
-      }`}>
-        {isListening 
-          ? (transcript || 'Listening...') 
-          : 'Say: Rs. 350 on Groceries'}
+      <div
+        className={`absolute top-full mt-2.5 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap pointer-events-none transition-all duration-200 shadow-md min-w-[160px] max-w-[240px] text-center text-balance z-20 ${
+          isListening
+            ? 'bg-accent-green text-white scale-100 opacity-100'
+            : 'bg-primary dark:bg-accent-green text-white scale-95 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
+        }`}
+      >
+        <span aria-live="polite">
+          {isListening
+            ? (transcript || 'Listening...')
+            : HINTS[hintIndex]}
+        </span>
       </div>
+      <span className="sr-only" aria-live="polite">
+        {isListening ? `Listening: ${transcript}` : ''}
+        {voiceError ? `Voice error: ${voiceError}` : ''}
+      </span>
     </div>
   )
 }

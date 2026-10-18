@@ -112,5 +112,5 @@ export async function generateXLSX(
 export function getExportFilename(format: ExportFormat): string {
   const now = new Date()
   const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-  return `SimpleBudget_${dateStr}.${format}`
+  return `BudgetPulse_${dateStr}.${format}`
 }

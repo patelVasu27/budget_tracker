@@ -18,12 +18,21 @@ export default {
           red: '#D95D39',
           gold: '#D9A752',
         },
+        // Semantic tokens for redesign
+        'balance-positive': '#2D6A4F',
+        'balance-negative': '#D95D39',
+        'voice-active': '#2D6A4F',
+        'voice-idle': '#5A6B5E',
         border: '#E1E6DC',
         'border-subtle': '#EEF1EB',
       },
       fontFamily: {
         sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
         display: ['Fraunces', 'serif'],
+      },
+      fontSize: {
+        'hero': ['clamp(2.5rem, 6vw, 4.5rem)', { lineHeight: '0.9', letterSpacing: '-0.03em' }],
+        'balance-xl': ['clamp(2rem, 5vw, 3.5rem)', { lineHeight: '1.0', letterSpacing: '-0.02em' }],
       },
       boxShadow: {
         'card': '0 2px 8px rgba(27, 42, 30, 0.03), 0 8px 20px rgba(27, 42, 30, 0.02)',
@@ -35,6 +44,11 @@ export default {
         'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
         'scale-in': 'scaleIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)',
         'pulse-mic': 'pulseMic 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'count-up': 'countUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'pulse-ring': 'pulseRing 2s ease-out infinite',
+        'slide-in-right': 'slideInRight 0.3s ease-out',
+        'slide-out-right': 'slideOutRight 0.2s ease-in',
+        'stagger-in': 'staggerIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
       },
       keyframes: {
         fadeIn: {
@@ -58,6 +72,27 @@ export default {
             boxShadow: '0 0 0 14px rgba(45, 106, 79, 0)',
             transform: 'scale(1.06)',
           },
+        },
+        countUp: {
+          '0%': { opacity: '0', transform: 'translateY(0.5em)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        pulseRing: {
+          '0%': { boxShadow: '0 0 0 0 rgba(45, 106, 79, 0.4)' },
+          '70%': { boxShadow: '0 0 0 16px rgba(45, 106, 79, 0)' },
+          '100%': { boxShadow: '0 0 0 0 rgba(45, 106, 79, 0)' },
+        },
+        slideInRight: {
+          '0%': { opacity: '0', transform: 'translateX(20px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
+        slideOutRight: {
+          '0%': { opacity: '1', transform: 'translateX(0)' },
+          '100%': { opacity: '0', transform: 'translateX(20px)' },
+        },
+        staggerIn: {
+          '0%': { opacity: '0', transform: 'translateY(8px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
       },
     },

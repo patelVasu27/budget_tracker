@@ -4,6 +4,8 @@ type CategoryName = 'Food' | 'Transport' | 'Utilities' | 'Entertainment' | 'Shop
 
 interface CategoryIconProps {
   category: CategoryName
+  color?: string | null
+  icon?: string | null
   className?: string
   size?: 'sm' | 'md' | 'lg'
 }
@@ -74,20 +76,40 @@ const DEFAULT_METADATA = {
   emoji: '📦',
 }
 
-export function CategoryIcon({ category, className = '', size = 'md' }: CategoryIconProps) {
+export function CategoryIcon({ category, color, icon, className = '', size = 'md' }: CategoryIconProps) {
   const meta = CATEGORY_METADATA[category] || DEFAULT_METADATA
   const IconComponent = meta.icon
 
   const sizeClasses = {
     sm: 'w-8 h-8 rounded-lg text-xs border',
-    md: 'w-11 h-11 rounded-xl text-sm border',
-    lg: 'w-14 h-14 rounded-2xl text-base border-2',
+    md: 'w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl text-sm border',
+    lg: 'w-14 h-14 min-w-[56px] min-h-[56px] rounded-2xl text-base border-2',
   }
 
   const iconSizes = {
     sm: 14,
     md: 18,
     lg: 22,
+  }
+
+  const hasDynamic = (color != null && color !== '') || (icon != null && icon !== '')
+  if (hasDynamic) {
+    const dynamicStyle = color
+      ? { backgroundColor: `${color}14`, borderColor: `${color}45`, color }
+      : undefined
+    return (
+      <div
+        className={`flex-shrink-0 flex items-center justify-center ${sizeClasses[size]} ${className}`}
+        style={dynamicStyle}
+        aria-hidden="true"
+      >
+        {icon ? (
+          <span className={size === 'sm' ? 'text-sm' : size === 'md' ? 'text-xl' : 'text-2xl'}>{icon}</span>
+        ) : (
+          <IconComponent size={iconSizes[size]} strokeWidth={2.2} />
+        )}
+      </div>
+    )
   }
 
   return (

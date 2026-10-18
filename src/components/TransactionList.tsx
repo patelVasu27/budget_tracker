@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { format } from 'date-fns'
 import { Pencil, Trash2, Check } from 'lucide-react'
 import { CategoryIcon } from './CategoryIcon'
@@ -7,10 +7,11 @@ import type { Transaction } from '../types'
 
 interface TransactionListProps {
   transactions: Transaction[]
+  categoryMeta?: Record<string, { color?: string | null; icon?: string | null }>
   onEdit?: (transaction: Transaction) => void
   onDelete?: (transaction: Transaction) => void
+  groupByDate?: boolean
 }
-
 
 export function parseLocalDate(dateStr: string): Date {
   if (dateStr && typeof dateStr === 'string') {
@@ -31,7 +32,27 @@ export function parseLocalDate(dateStr: string): Date {
   return isNaN(d.getTime()) ? new Date() : d
 }
 
-export function TransactionList({ transactions, onEdit, onDelete }: TransactionListProps) {
+function getDateKey(dateStr: string): string {
+  const date = parseLocalDate(dateStr)
+  return format(date, 'yyyy-MM-dd')
+}
+
+function getDateLabel(dateStr: string): string {
+  const date = parseLocalDate(dateStr)
+  const today = new Date()
+  const yesterday = new Date(today)
+  yesterday.setDate(yesterday.getDate() - 1)
+
+  if (format(date, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')) {
+    return 'Today'
+  }
+  if (format(date, 'yyyy-MM-dd') === format(yesterday, 'yyyy-MM-dd')) {
+    return 'Yesterday'
+  }
+  return format(date, 'EEEE, MMMM d, yyyy')
+}
+
+export function TransactionList({ transactions, categoryMeta, onEdit, onDelete, groupByDate = true }: TransactionListProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -43,6 +64,29 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
     }
   }, [])
 
+  // Group transactions by date
+  const groupedTransactions = useMemo(() => {
+    if (!groupByDate) {
+      return [{ dateKey: '', dateLabel: '', transactions }]
+    }
+
+    const groups = new Map<string, { dateLabel: string; transactions: Transaction[] }>()
+
+    transactions.forEach(tx => {
+      const dateKey = getDateKey(tx.date)
+      const dateLabel = getDateLabel(tx.date)
+      if (!groups.has(dateKey)) {
+        groups.set(dateKey, { dateLabel, transactions: [] })
+      }
+      groups.get(dateKey)!.transactions.push(tx)
+    })
+
+    // Sort groups by date descending
+    return Array.from(groups.entries())
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([dateKey, { dateLabel, transactions }]) => ({ dateKey, dateLabel, transactions }))
+  }, [transactions, groupByDate])
+
   if (transactions.length === 0) {
     return (
       <div className="text-center py-16" role="status" aria-label="No transactions yet">
@@ -52,7 +96,7 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
           </svg>
         </div>
         <p className="text-lg font-medium text-primary dark:text-[#E8ECE4]">No transactions yet</p>
-        <p className="text-sm text-secondary mt-1">Tap the plus button to log an income or expense</p>
+        <p className="text-sm text-secondary mt-1">Tap the mic or + button to log an income or expense</p>
       </div>
     )
   }
@@ -73,66 +117,79 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
   }
 
   return (
-    <div className="space-y-1.5" role="list" aria-label="Transaction list">
-      {transactions.map((tx) => (
-        <div
-          key={tx.id}
-          className="group flex items-center gap-4 p-3 sm:p-3.5 rounded-2xl hover:bg-[#F9FAF8] dark:hover:bg-white/[0.02] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(27,42,30,0.02)] transition-all duration-300 ease-out border border-transparent hover:border-[#E8ECE4] dark:hover:border-white/5"
-          role="listitem"
-        >
-          <CategoryIcon category={tx.category} />
+    <div className="space-y-4" role="list" aria-label="Transaction list">
+      {groupedTransactions.map(({ dateKey, dateLabel, transactions: groupTxs }) => (
+        <div key={dateKey} className="space-y-1.5 animate-slide-in">
+          {dateLabel && (
+            <div className="sticky top-0 z-10 mb-2 animate-fade-in" style={{ animationDelay: '60ms' }}>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-background dark:bg-[#0F1410] border border-border-subtle dark:border-white/10 rounded-xl text-xs font-bold uppercase tracking-wider text-secondary dark:text-secondary/70 backdrop-blur-sm shadow-sm">
+                {dateLabel}
+              </div>
+            </div>
+          )}
+          {groupTxs.map((tx, index) => {
+            const meta = categoryMeta?.[tx.category_id || ''] ?? categoryMeta?.[tx.category.toLowerCase()]
+            return (
+            <div
+              key={tx.id}
+              className="group transaction-row min-h-[64px] animate-stagger-in"
+              style={{ animationDelay: `${Math.min(index * 60, 300)}ms` }}
+              role="listitem"
+            >
+              <CategoryIcon category={tx.category} color={meta?.color} icon={meta?.icon} size="lg" />
 
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-primary dark:text-[#E8ECE4] text-sm leading-snug">{tx.category}</p>
-            <p className="text-xs text-secondary mt-0.5 truncate font-sans">
-              {format(parseLocalDate(tx.date), 'MMM d, yyyy')}
-              {tx.note && <span className="text-secondary/60"> · {tx.note}</span>}
-            </p>
-          </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-primary dark:text-[#E8ECE4] text-sm leading-snug">{tx.category}</p>
+                <p className="text-xs text-secondary mt-0.5 truncate font-sans">
+                  {format(parseLocalDate(tx.date), 'MMM d, yyyy')}
+                  {tx.note && <span className="text-secondary/60"> · {tx.note}</span>}
+                </p>
+              </div>
 
-          <div className="flex items-center gap-3">
-             <span
-               className={`font-bold font-display text-base sm:text-lg tabular-nums ${
-                 tx.type === 'income' ? 'text-accent-green' : 'text-accent-red'
-               }`}
-               aria-label={`${tx.type === 'income' ? 'Plus' : 'Minus'} ₹${tx.amount.toFixed(2)}`}
-             >
-               {tx.type === 'income' ? '+' : '-'}₹{tx.amount.toFixed(2)}
-             </span>
-
-            {onEdit && (
-              <Tooltip content="Edit Transaction">
-                <button
-                  onClick={() => onEdit(tx)}
-                  className="p-2 text-secondary/40 hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-primary/5 dark:hover:bg-white/5 rounded-lg opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all duration-200"
-                  aria-label={`Edit ${tx.category} ${tx.type === 'income' ? 'income' : 'expense'}`}
+              <div className="flex items-center gap-3">
+                <span
+                  className={`font-bold font-display text-base sm:text-lg tabular-nums ${tx.type === 'income' ? 'text-accent-green' : 'text-accent-red'}`}
+                  aria-label={`${tx.type === 'income' ? 'Income' : 'Expense'} ₹${tx.amount.toFixed(2)}`}
                 >
-                  <Pencil className="w-4 h-4" aria-hidden="true" />
-                </button>
-              </Tooltip>
-            )}
+                  ₹{tx.amount.toFixed(2)}
+                </span>
 
-            {onDelete && (
-              <Tooltip content={deletingId === tx.id ? "Confirm Delete" : "Delete Transaction"}>
-                <button
-                  onClick={() => handleDeleteClick(tx)}
-                  className={`p-2 rounded-lg transition-all duration-200 focus:opacity-100 ${
-                    deletingId === tx.id
-                      ? 'bg-accent-red text-white shadow-sm hover:bg-[#C24E2E] animate-scale-in opacity-100'
-                      : 'text-secondary/40 hover:text-accent-red hover:bg-accent-red/5 opacity-0 group-hover:opacity-100'
-                  }`}
-                  aria-label={deletingId === tx.id ? `Confirm delete ${tx.category} ${tx.type === 'income' ? 'income' : 'expense'}` : `Delete ${tx.category} ${tx.type === 'income' ? 'income' : 'expense'}`}
-                  aria-pressed={deletingId === tx.id}
-                >
-                  {deletingId === tx.id ? (
-                    <Check className="w-4 h-4" aria-hidden="true" />
-                  ) : (
-                    <Trash2 className="w-4 h-4" aria-hidden="true" />
-                  )}
-                </button>
-              </Tooltip>
-            )}
-          </div>
+                {onEdit && (
+                  <Tooltip content="Edit Transaction">
+                    <button
+                      onClick={() => onEdit(tx)}
+                      className="action-button action-button-hidden text-secondary/40 hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-primary/5 dark:hover:bg-white/5"
+                      aria-label={`Edit ${tx.category} ${tx.type === 'income' ? 'income' : 'expense'}`}
+                    >
+                      <Pencil className="w-4 h-4" aria-hidden="true" />
+                    </button>
+                  </Tooltip>
+                )}
+
+                {onDelete && (
+                  <Tooltip content={deletingId === tx.id ? "Confirm Delete" : "Delete Transaction"}>
+                    <button
+                      onClick={() => handleDeleteClick(tx)}
+                      className={`action-button transition-all duration-200 focus:opacity-100 ${
+                        deletingId === tx.id
+                          ? 'bg-accent-red text-white shadow-sm hover:bg-[#C24E2E] animate-scale-in opacity-100'
+                          : 'text-secondary/40 hover:text-accent-red hover:bg-accent-red/5 opacity-0 group-hover:opacity-100'
+                      }`}
+                      aria-label={deletingId === tx.id ? `Confirm delete ${tx.category} ${tx.type === 'income' ? 'income' : 'expense'}` : `Delete ${tx.category} ${tx.type === 'income' ? 'income' : 'expense'}`}
+                      aria-pressed={deletingId === tx.id}
+                    >
+                      {deletingId === tx.id ? (
+                        <Check className="w-4 h-4" aria-hidden="true" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" aria-hidden="true" />
+                      )}
+                    </button>
+                  </Tooltip>
+                )}
+              </div>
+            </div>
+            )
+          })}
         </div>
       ))}
     </div>

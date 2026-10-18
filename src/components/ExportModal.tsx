@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { X, Download, FileText } from 'lucide-react'
+import { X, Download, FileText, Check } from 'lucide-react'
 import { format } from 'date-fns'
 import { supabase } from '../lib/supabase'
 import { generateCSV, generateXLSX, getExportFilename } from '../lib/export'
@@ -12,17 +12,22 @@ interface ExportModalProps {
   userId: string
 }
 
+type DatePreset = 'thisMonth' | 'lastMonth' | 'last3' | 'custom'
+
 export function ExportModal({ isOpen, onClose, userId }: ExportModalProps) {
   const today = new Date()
   const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
 
   const [dateFrom, setDateFrom] = useState(format(firstOfMonth, 'yyyy-MM-dd'))
   const [dateTo, setDateTo] = useState(format(today, 'yyyy-MM-dd'))
+  const [preset, setPreset] = useState<DatePreset>('thisMonth')
   const [fileFormat, setFileFormat] = useState<ExportFormat>('csv')
   const [includeSummary, setIncludeSummary] = useState(true)
   const [isExporting, setIsExporting] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState('')
   const modalRef = useRef<HTMLDivElement>(null)
+  const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') { onClose(); return }
@@ -42,15 +47,44 @@ export function ExportModal({ isOpen, onClose, userId }: ExportModalProps) {
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown)
       document.body.style.overflow = 'hidden'
+      setError('')
+      setIsSuccess(false)
+      setIsExporting(false)
+      setPreset('thisMonth')
+      setDateFrom(format(firstOfMonth, 'yyyy-MM-dd'))
+      setDateTo(format(today, 'yyyy-MM-dd'))
     }
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
       document.body.style.overflow = ''
+      if (successTimer.current) clearTimeout(successTimer.current)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, handleKeyDown])
+
+  const applyPreset = (p: Exclude<DatePreset, 'custom'>) => {
+    const now = new Date()
+    if (p === 'thisMonth') {
+      const first = new Date(now.getFullYear(), now.getMonth(), 1)
+      setDateFrom(format(first, 'yyyy-MM-dd'))
+      setDateTo(format(now, 'yyyy-MM-dd'))
+    } else if (p === 'lastMonth') {
+      const first = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+      const last = new Date(now.getFullYear(), now.getMonth(), 0)
+      setDateFrom(format(first, 'yyyy-MM-dd'))
+      setDateTo(format(last, 'yyyy-MM-dd'))
+    } else {
+      const first = new Date(now.getFullYear(), now.getMonth() - 2, 1)
+      setDateFrom(format(first, 'yyyy-MM-dd'))
+      setDateTo(format(now, 'yyyy-MM-dd'))
+    }
+    setPreset(p)
+    setError('')
+  }
 
   const handleExport = async () => {
     setIsExporting(true)
+    setIsSuccess(false)
     setError('')
 
     try {
@@ -104,7 +138,8 @@ export function ExportModal({ isOpen, onClose, userId }: ExportModalProps) {
       setTimeout(() => URL.revokeObjectURL(url), 1000)
 
       setIsExporting(false)
-      onClose()
+      setIsSuccess(true)
+      successTimer.current = setTimeout(() => onClose(), 1200)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Export failed')
       setIsExporting(false)
@@ -112,6 +147,22 @@ export function ExportModal({ isOpen, onClose, userId }: ExportModalProps) {
   }
 
   if (!isOpen) return null
+
+  const presetBtn = (id: Exclude<DatePreset, 'custom'>, label: string) => (
+    <button
+      key={id}
+      type="button"
+      onClick={() => applyPreset(id)}
+      aria-pressed={preset === id}
+      className={`min-h-[44px] px-3 py-2 rounded-xl text-sm font-medium transition-all active:scale-95 ${
+        preset === id
+          ? 'bg-accent-green text-white shadow-sm'
+          : 'bg-[#EEF1EB] dark:bg-white/5 text-secondary hover:text-primary dark:hover:text-[#E8ECE4]'
+      }`}
+    >
+      {label}
+    </button>
+  )
 
   return (
     <div
@@ -124,13 +175,13 @@ export function ExportModal({ isOpen, onClose, userId }: ExportModalProps) {
       <div ref={modalRef} className="relative bg-surface dark:bg-[#1B2A1E] rounded-2xl shadow-modal w-full max-w-md p-6 animate-scale-in border border-white/20 dark:border-white/5">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-secondary hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-primary/5 dark:hover:bg-white/5 rounded-lg transition-colors"
+          className="absolute top-4 right-4 p-2 min-w-[40px] min-h-[40px] text-secondary hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-primary/5 dark:hover:bg-white/5 rounded-lg transition-colors"
           aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <div className="mb-6">
+        <div className="mb-6 pr-10">
           <h2 id="export-modal-heading" className="text-xl font-bold text-primary dark:text-[#E8ECE4] font-display">Export Transactions</h2>
           <p className="text-xs text-secondary dark:text-secondary/70 mt-1 font-sans">Download your transactions as CSV or XLSX</p>
         </div>
@@ -140,85 +191,111 @@ export function ExportModal({ isOpen, onClose, userId }: ExportModalProps) {
             {error}
           </div>
         )}
+        {isSuccess && (
+          <div className="mb-4 p-3 bg-accent-green/10 text-accent-green rounded-xl text-sm font-medium flex items-center gap-2 animate-scale-in" role="status">
+            <Check className="w-4 h-4" />
+            Export downloaded.
+          </div>
+        )}
 
         <div className="space-y-5">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-secondary dark:text-secondary/70 mb-1.5">From</label>
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="input-field"
-                max={dateTo}
-              />
+          <div>
+            <span className="block text-xs font-bold uppercase tracking-wider text-secondary dark:text-secondary/70 mb-2">Range</span>
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              {presetBtn('thisMonth', 'This month')}
+              {presetBtn('lastMonth', 'Last month')}
+              {presetBtn('last3', 'Last 3 months')}
             </div>
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-secondary dark:text-secondary/70 mb-1.5">To</label>
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="input-field"
-                min={dateFrom}
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-secondary dark:text-secondary/70 mb-1.5" htmlFor="export-from">From</label>
+                <input
+                  id="export-from"
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => { setDateFrom(e.target.value); setPreset('custom') }}
+                  className="input-field"
+                  max={dateTo}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-secondary dark:text-secondary/70 mb-1.5" htmlFor="export-to">To</label>
+                <input
+                  id="export-to"
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => { setDateTo(e.target.value); setPreset('custom') }}
+                  className="input-field"
+                  min={dateFrom}
+                />
+              </div>
             </div>
+            {preset === 'custom' && (
+              <p className="mt-2 text-xs text-secondary/70">Custom range selected.</p>
+            )}
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-secondary dark:text-secondary/70 mb-1.5">Format</label>
-            <div className="grid grid-cols-2 gap-2">
+            <span className="block text-xs font-bold uppercase tracking-wider text-secondary dark:text-secondary/70 mb-1.5">Format</span>
+            <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Export format">
               <button
                 type="button"
+                role="radio"
+                aria-checked={fileFormat === 'csv'}
                 onClick={() => setFileFormat('csv')}
-                className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${
+                className={`flex items-center gap-3 min-h-[56px] p-3 rounded-2xl border-2 transition-all text-left active:scale-[0.98] ${
                   fileFormat === 'csv'
                     ? 'border-accent-green bg-accent-green/5 dark:bg-accent-green/10'
                     : 'border-border-subtle dark:border-white/5 hover:border-[#E8ECE4] dark:hover:border-white/10'
                 }`}
               >
-                <FileText className={`w-5 h-5 ${fileFormat === 'csv' ? 'text-accent-green' : 'text-secondary dark:text-secondary/70'}`} />
-                <div className="text-left">
-                  <p className="text-sm font-semibold text-primary dark:text-[#E8ECE4]">CSV</p>
-                  <p className="text-[10px] text-secondary dark:text-secondary/70 tracking-tight">Excel compatible</p>
-                </div>
+                <FileText className={`w-5 h-5 flex-shrink-0 ${fileFormat === 'csv' ? 'text-accent-green' : 'text-secondary dark:text-secondary/70'}`} />
+                <span>
+                  <span className="block text-sm font-semibold text-primary dark:text-[#E8ECE4]">CSV</span>
+                  <span className="block text-[11px] text-secondary dark:text-secondary/70">Excel compatible</span>
+                </span>
               </button>
               <button
                 type="button"
+                role="radio"
+                aria-checked={fileFormat === 'xlsx'}
                 onClick={() => setFileFormat('xlsx')}
-                className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${
+                className={`flex items-center gap-3 min-h-[56px] p-3 rounded-2xl border-2 transition-all text-left active:scale-[0.98] ${
                   fileFormat === 'xlsx'
                     ? 'border-accent-green bg-accent-green/5 dark:bg-accent-green/10'
                     : 'border-border-subtle dark:border-white/5 hover:border-[#E8ECE4] dark:hover:border-white/10'
                 }`}
               >
-                <Download className={`w-5 h-5 ${fileFormat === 'xlsx' ? 'text-accent-green' : 'text-secondary dark:text-secondary/70'}`} />
-                <div className="text-left">
-                  <p className="text-sm font-semibold text-primary dark:text-[#E8ECE4]">XLSX</p>
-                  <p className="text-[10px] text-secondary dark:text-secondary/70 tracking-tight">Excel workbook</p>
-                </div>
+                <Download className={`w-5 h-5 flex-shrink-0 ${fileFormat === 'xlsx' ? 'text-accent-green' : 'text-secondary dark:text-secondary/70'}`} />
+                <span>
+                  <span className="block text-sm font-semibold text-primary dark:text-[#E8ECE4]">XLSX</span>
+                  <span className="block text-[11px] text-secondary dark:text-secondary/70">Excel workbook</span>
+                </span>
               </button>
             </div>
           </div>
 
-          <label className="flex items-center gap-3 p-3 rounded-xl border border-border-subtle dark:border-white/5 cursor-pointer hover:bg-[#F9FAF8] dark:hover:bg-white/5 transition-colors select-none">
-            <input
-              type="checkbox"
-              checked={includeSummary}
-              onChange={(e) => setIncludeSummary(e.target.checked)}
-              className="w-4 h-4 rounded border-border-color dark:border-white/20 text-accent-green focus:ring-accent-green bg-transparent"
-            />
-            <div>
-              <p className="text-sm font-semibold text-primary dark:text-[#E8ECE4]">Include category summary</p>
-              <p className="text-[10px] text-secondary dark:text-secondary/70">Adds a breakdown by category</p>
-            </div>
-          </label>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={includeSummary}
+            onClick={() => setIncludeSummary(v => !v)}
+            className="w-full flex items-center gap-3 min-h-[56px] p-3 rounded-2xl border border-border-subtle dark:border-white/5 hover:bg-[#F9FAF8] dark:hover:bg-white/5 transition-colors text-left select-none"
+          >
+            <span className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${includeSummary ? 'bg-accent-green' : 'bg-primary/15 dark:bg-white/15'}`}>
+              <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${includeSummary ? 'left-[22px]' : 'left-0.5'}`} />
+            </span>
+            <span>
+              <span className="block text-sm font-semibold text-primary dark:text-[#E8ECE4]">Include category summary</span>
+              <span className="block text-[11px] text-secondary dark:text-secondary/70">Adds a breakdown by category</span>
+            </span>
+          </button>
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="btn-secondary flex-1"
+              className="btn-secondary flex-1 min-h-[44px]"
               disabled={isExporting}
             >
               Cancel
@@ -226,16 +303,21 @@ export function ExportModal({ isOpen, onClose, userId }: ExportModalProps) {
             <button
               type="button"
               onClick={handleExport}
-              className="btn-primary flex-1 flex items-center justify-center gap-2"
-              disabled={isExporting}
+              className="btn-primary flex-1 min-h-[44px] flex items-center justify-center gap-2"
+              disabled={isExporting || isSuccess}
             >
               {isExporting ? (
                 <>
-                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
                   Exporting...
+                </>
+              ) : isSuccess ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  Done
                 </>
               ) : (
                 <>

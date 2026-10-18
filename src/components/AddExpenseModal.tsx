@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { X } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { X, Search } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { format } from 'date-fns'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -13,6 +13,7 @@ interface AddExpenseModalProps {
   onClose: () => void
   editTransaction?: Transaction | null
   voicePrefill?: { amount: number; category: string; note: string; type?: 'expense' | 'income' } | null
+  currentBalance?: number
 }
 
 interface ExpenseForm {
@@ -22,11 +23,13 @@ interface ExpenseForm {
   date: string
 }
 
-export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill }: AddExpenseModalProps) {
+export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill, currentBalance }: AddExpenseModalProps) {
   const { user, isGuest } = useAuthStore()
   const queryClient = useQueryClient()
   const [error, setError] = useState('')
   const [transactionType, setTransactionType] = useState<'expense' | 'income'>('expense')
+  const [categoryQuery, setCategoryQuery] = useState('')
+  const [datePreset, setDatePreset] = useState<'today' | 'yesterday' | 'custom'>('today')
 
   const activeUserId = isGuest ? 'guest' : user?.id
   const { grouped, ungrouped, allCategories, isLoading } = useCategoryPickerData(activeUserId, transactionType)
@@ -41,13 +44,18 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
   })
 
   const selectedCategoryId = watch('categoryId')
+  const watchedAmount = watch('amount')
+  const watchedDate = watch('date')
   const modalRef = useRef<HTMLDivElement>(null)
   const firstFocusableRef = useRef<HTMLInputElement | null>(null)
 
-  const { ref: amountRef, ...amountRegister } = register('amount', { 
-    required: 'Amount is required', 
-    min: { value: 0.01, message: 'Amount must be greater than 0' } 
+  const { ref: amountRef, ...amountRegister } = register('amount', {
+    required: 'Amount is required',
+    min: { value: 0.01, message: 'Amount must be greater than 0' }
   })
+
+  const todayStr = format(new Date(), 'yyyy-MM-dd')
+  const yesterdayStr = format(new Date(Date.now() - 86400000), 'yyyy-MM-dd')
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') {
@@ -92,9 +100,15 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
   // Setup form once when modal opens
   useEffect(() => {
     if (!isOpen) return
+    setCategoryQuery('')
+    setDatePreset('today')
 
     if (editTransaction) {
       setTransactionType(editTransaction.type || 'expense')
+      const d = editTransaction.date
+      if (d === todayStr) setDatePreset('today')
+      else if (d === yesterdayStr) setDatePreset('yesterday')
+      else setDatePreset('custom')
       reset({
         amount: editTransaction.amount.toString(),
         categoryId: editTransaction.category_id || '',
@@ -118,7 +132,7 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
         date: format(new Date(), 'yyyy-MM-dd'),
       })
     }
-  }, [isOpen, editTransaction, voicePrefill, reset])
+  }, [isOpen, editTransaction, voicePrefill, reset, todayStr, yesterdayStr])
 
   // Set default category when categories load or selection is missing
   useEffect(() => {
@@ -145,6 +159,38 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
       }
     }
   }, [transactionType, allCategories, selectedCategoryId, setValue, isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return
+    if (watchedDate === todayStr) setDatePreset('today')
+    else if (watchedDate === yesterdayStr) setDatePreset('yesterday')
+    else setDatePreset('custom')
+  }, [watchedDate, isOpen, todayStr, yesterdayStr])
+
+  const filteredGroups = useMemo(() => {
+    const q = categoryQuery.trim().toLowerCase()
+    if (!q) return grouped
+    return grouped
+      .map(g => ({
+        group: g.group,
+        categories: g.categories.filter(c => c.name.toLowerCase().includes(q)),
+      }))
+      .filter(g => g.categories.length > 0)
+  }, [grouped, categoryQuery])
+
+  const filteredUngrouped = useMemo(() => {
+    const q = categoryQuery.trim().toLowerCase()
+    if (!q) return ungrouped
+    return ungrouped.filter(c => c.name.toLowerCase().includes(q))
+  }, [ungrouped, categoryQuery])
+
+  const parsedAmount = parseFloat(watchedAmount)
+  const showPreview = typeof currentBalance === 'number' && !isNaN(parsedAmount) && parsedAmount > 0
+  const previewBalance = showPreview
+    ? transactionType === 'expense'
+      ? (currentBalance as number) - parsedAmount
+      : (currentBalance as number) + parsedAmount
+    : null
 
   const addMutation = useMutation({
     mutationFn: async (data: ExpenseForm) => {
@@ -263,7 +309,14 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
     }
   }
 
+  const selectDatePreset = (preset: 'today' | 'yesterday') => {
+    setDatePreset(preset)
+    setValue('date', preset === 'today' ? todayStr : yesterdayStr, { shouldDirty: true })
+  }
+
   if (!isOpen) return null
+
+  const isExpense = transactionType === 'expense'
 
   return (
     <div
@@ -274,34 +327,33 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
       aria-describedby="expense-modal-subtitle"
     >
       <div className="absolute inset-0 bg-primary/20 dark:bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-      <div ref={modalRef} className="relative bg-surface dark:bg-[#1B2A1E] rounded-2xl shadow-modal w-full max-w-md p-6 animate-scale-in max-h-[85vh] overflow-y-auto border border-white/20 dark:border-white/5">
-        <button 
-          onClick={onClose} 
-          className="absolute top-4 right-4 p-2 text-secondary hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-primary/5 dark:hover:bg-white/5 rounded-lg transition-colors"
+      <div ref={modalRef} className="relative bg-surface dark:bg-[#1B2A1E] rounded-2xl shadow-modal w-full max-w-md animate-scale-in max-h-[88vh] flex flex-col border border-white/20 dark:border-white/5">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 text-secondary hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-primary/5 dark:hover:bg-white/5 rounded-lg transition-colors z-10"
           aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <div className="mb-6">
+        <div className="px-6 pt-6 pb-4">
           <h2 id="expense-modal-heading" className="text-xl font-bold text-primary dark:text-[#E8ECE4] font-display">
             {editTransaction
-              ? (transactionType === 'income' ? 'Edit Income' : 'Edit Expense')
-              : (transactionType === 'income' ? 'Add Income' : 'Add Expense')}
+              ? (isExpense ? 'Edit Expense' : 'Edit Income')
+              : (isExpense ? 'Add Expense' : 'Add Income')}
           </h2>
           <p id="expense-modal-subtitle" className="text-xs text-secondary dark:text-secondary/70 mt-1 font-sans">
-            {editTransaction ? 'Update the details below' : `Fill in the details to add ${transactionType === 'income' ? 'an income' : 'an expense'}`}
+            {editTransaction ? 'Update the details below' : voicePrefill ? 'Confirm the voice entry below' : `Fill in the details to add ${isExpense ? 'an expense' : 'an income'}`}
           </p>
-        </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          {/* Transaction Type Toggle */}
-          <div className="flex bg-[#EEF1EB] dark:bg-white/5 p-1 rounded-xl">
+          <div className="flex bg-[#EEF1EB] dark:bg-white/5 p-1 rounded-full mt-4" role="tablist" aria-label="Transaction type">
             <button
               type="button"
+              role="tab"
+              aria-selected={isExpense}
               onClick={() => setTransactionType('expense')}
-              className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all active:scale-95 ${
-                transactionType === 'expense'
+              className={`flex-1 min-h-[44px] py-2 text-xs font-bold uppercase tracking-wider rounded-full transition-all active:scale-95 ${
+                isExpense
                   ? 'bg-accent-red text-white shadow-sm'
                   : 'text-secondary dark:text-secondary/70 hover:text-primary dark:hover:text-[#E8ECE4]'
               }`}
@@ -310,9 +362,11 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
             </button>
             <button
               type="button"
+              role="tab"
+              aria-selected={!isExpense}
               onClick={() => setTransactionType('income')}
-              className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all active:scale-95 ${
-                transactionType === 'income'
+              className={`flex-1 min-h-[44px] py-2 text-xs font-bold uppercase tracking-wider rounded-full transition-all active:scale-95 ${
+                !isExpense
                   ? 'bg-accent-green text-white shadow-sm'
                   : 'text-secondary dark:text-secondary/70 hover:text-primary dark:hover:text-[#E8ECE4]'
               }`}
@@ -320,27 +374,35 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
               Income
             </button>
           </div>
+        </div>
 
+        <form onSubmit={handleSubmit(onSubmit)} className="px-6 pb-6 space-y-5 overflow-y-auto">
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-secondary dark:text-secondary/70 mb-2">Amount</label>
             <div className="relative">
-               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary dark:text-secondary/70 font-semibold">₹</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary dark:text-secondary/70 font-semibold text-2xl">₹</span>
               <input
                 type="number"
                 step="0.01"
+                inputMode="decimal"
                 {...amountRegister}
                 ref={(e) => {
                   amountRef(e)
                   firstFocusableRef.current = e
                 }}
-                className="input-field pl-9 font-display text-xl font-bold"
+                className="input-field pl-10 font-display text-4xl font-bold tabular-nums"
                 placeholder="0.00"
-                aria-label={`${transactionType === 'income' ? 'Income' : 'Expense'} amount`}
+                aria-label={`${isExpense ? 'Expense' : 'Income'} amount`}
                 aria-required="true"
                 aria-invalid={!!errors.amount}
               />
             </div>
             {errors.amount && <p className="text-sm text-accent-red mt-1" role="alert">{errors.amount.message}</p>}
+            {showPreview && previewBalance !== null && (
+              <p className="mt-2 text-sm text-secondary dark:text-secondary/70 tabular-nums" aria-live="polite">
+                Remaining after: <span className={`font-bold ${previewBalance >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>₹{Math.abs(previewBalance).toFixed(2)}</span>
+              </p>
+            )}
           </div>
 
           <div>
@@ -356,100 +418,139 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
                 <p>Click <span className="font-semibold">Categories</span> in the header to create one.</p>
               </div>
             ) : (
-              <div className="space-y-2" role="radiogroup" aria-label="Select category">
-                {grouped.map((groupItem) => (
-                  <div key={groupItem.group?.id || 'ungrouped-section'}>
-                    {groupItem.group && (
-                      <div className="text-xs font-bold text-secondary/60 dark:text-secondary/40 uppercase tracking-wider mb-1 px-1">
-                        {groupItem.group.name}
+              <>
+                <div className="relative mb-3">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary/50 pointer-events-none" aria-hidden="true" />
+                  <input
+                    type="text"
+                    value={categoryQuery}
+                    onChange={(e) => setCategoryQuery(e.target.value)}
+                    className="input-field pl-9 text-sm"
+                    placeholder="Search categories"
+                    aria-label="Search categories"
+                  />
+                </div>
+                <div className="space-y-3 max-h-56 overflow-y-auto pr-1" role="radiogroup" aria-label="Select category">
+                  {filteredGroups.map((groupItem) => (
+                    <div key={groupItem.group?.id || 'ungrouped-section'}>
+                      {groupItem.group && (
+                        <div className="text-xs font-bold text-secondary/60 dark:text-secondary/40 uppercase tracking-wider mb-1 px-1">
+                          {groupItem.group.name}
+                        </div>
+                      )}
+                      <div className="space-y-1.5">
+                        {groupItem.categories.map((cat) => {
+                          const selected = selectedCategoryId === cat.id
+                          return (
+                            <label
+                              key={cat.id}
+                              className={`flex items-center gap-3 min-h-[44px] px-3 py-2 rounded-2xl cursor-pointer transition-all duration-200 border-2 select-none active:scale-[0.98] ${
+                                selected
+                                  ? 'border-accent-green bg-accent-green/[0.04]'
+                                  : 'border-transparent hover:bg-[#F9FAF8] dark:hover:bg-white/5'
+                              }`}
+                            >
+                              <span className="text-xl w-8 h-8 flex items-center justify-center rounded-xl bg-primary/[0.04] dark:bg-white/[0.04] flex-shrink-0">
+                                {cat.icon || '📦'}
+                              </span>
+                              <span className={`text-sm font-semibold flex-1 ${selected ? 'text-accent-green' : 'text-primary dark:text-[#E8ECE4]'}`}>{cat.name}</span>
+                              {selected && <span className="w-2 h-2 rounded-full bg-accent-green flex-shrink-0" aria-hidden="true" />}
+                              <input
+                                type="radio"
+                                {...register('categoryId')}
+                                value={cat.id}
+                                className="sr-only"
+                                aria-label={cat.name}
+                              />
+                            </label>
+                          )
+                        })}
                       </div>
-                    )}
-                    <div className="grid grid-cols-4 gap-2">
-                      {groupItem.categories.map((cat) => (
-                        <label
-                          key={cat.id}
-                          className={`group flex flex-col items-center gap-1.5 p-3 rounded-2xl cursor-pointer transition-all duration-300 border-2 select-none active:scale-[0.96] ${
-                            selectedCategoryId === cat.id
-                              ? 'border-accent-green bg-accent-green/[0.04] shadow-[0_4px_12px_rgba(45,106,79,0.06)]'
-                              : 'border-transparent hover:bg-[#F9FAF8] dark:hover:bg-white/5 hover:border-[#E8ECE4] dark:hover:border-white/5'
-                          }`}
-                        >
-                          <span className="text-lg transition-transform duration-300">
-                            {cat.icon || '📦'}
-                          </span>
-                          <span className={`text-[10px] font-bold tracking-tight transition-colors duration-300 text-center leading-tight ${
-                            selectedCategoryId === cat.id ? 'text-accent-green' : 'text-secondary dark:text-secondary/70'
-                          }`}>{cat.name}</span>
-                          <input
-                            type="radio"
-                            {...register('categoryId')}
-                            value={cat.id}
-                            className="sr-only"
-                            aria-label={cat.name}
-                          />
-                        </label>
-                      ))}
                     </div>
-                  </div>
-                ))}
+                  ))}
 
-                {ungrouped.length > 0 && (
-                  <div>
-                    {grouped.length > 0 && (
-                      <div className="text-xs font-bold text-secondary/60 dark:text-secondary/40 uppercase tracking-wider mb-1 px-1">Other</div>
-                    )}
-                    <div className="grid grid-cols-4 gap-2">
-                      {ungrouped.map((cat) => (
-                        <label
-                          key={cat.id}
-                          className={`group flex flex-col items-center gap-1.5 p-3 rounded-2xl cursor-pointer transition-all duration-300 border-2 select-none active:scale-[0.96] ${
-                            selectedCategoryId === cat.id
-                              ? 'border-accent-green bg-accent-green/[0.04] shadow-[0_4px_12px_rgba(45,106,79,0.06)]'
-                              : 'border-transparent hover:bg-[#F9FAF8] dark:hover:bg-white/5 hover:border-[#E8ECE4] dark:hover:border-white/5'
-                          }`}
-                        >
-                          <span className="text-lg transition-transform duration-300">
-                            {cat.icon || '📦'}
-                          </span>
-                          <span className={`text-[10px] font-bold tracking-tight transition-colors duration-300 text-center leading-tight ${
-                            selectedCategoryId === cat.id ? 'text-accent-green' : 'text-secondary dark:text-secondary/70'
-                          }`}>{cat.name}</span>
-                          <input
-                            type="radio"
-                            {...register('categoryId')}
-                            value={cat.id}
-                            className="sr-only"
-                            aria-label={cat.name}
-                          />
-                        </label>
-                      ))}
+                  {filteredUngrouped.length > 0 && (
+                    <div>
+                      {filteredGroups.length > 0 && (
+                        <div className="text-xs font-bold text-secondary/60 dark:text-secondary/40 uppercase tracking-wider mb-1 px-1">Other</div>
+                      )}
+                      <div className="space-y-1.5">
+                        {filteredUngrouped.map((cat) => {
+                          const selected = selectedCategoryId === cat.id
+                          return (
+                            <label
+                              key={cat.id}
+                              className={`flex items-center gap-3 min-h-[44px] px-3 py-2 rounded-2xl cursor-pointer transition-all duration-200 border-2 select-none active:scale-[0.98] ${
+                                selected
+                                  ? 'border-accent-green bg-accent-green/[0.04]'
+                                  : 'border-transparent hover:bg-[#F9FAF8] dark:hover:bg-white/5'
+                              }`}
+                            >
+                              <span className="text-xl w-8 h-8 flex items-center justify-center rounded-xl bg-primary/[0.04] dark:bg-white/[0.04] flex-shrink-0">
+                                {cat.icon || '📦'}
+                              </span>
+                              <span className={`text-sm font-semibold flex-1 ${selected ? 'text-accent-green' : 'text-primary dark:text-[#E8ECE4]'}`}>{cat.name}</span>
+                              {selected && <span className="w-2 h-2 rounded-full bg-accent-green flex-shrink-0" aria-hidden="true" />}
+                              <input
+                                type="radio"
+                                {...register('categoryId')}
+                                value={cat.id}
+                                className="sr-only"
+                                aria-label={cat.name}
+                              />
+                            </label>
+                          )
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+
+                  {filteredGroups.length === 0 && filteredUngrouped.length === 0 && (
+                    <p className="text-sm text-secondary text-center py-4">No categories match “{categoryQuery}”.</p>
+                  )}
+                </div>
+              </>
             )}
           </div>
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-secondary dark:text-secondary/70 mb-2">Date</label>
+            <div className="flex gap-2 mb-2">
+              <button
+                type="button"
+                onClick={() => selectDatePreset('today')}
+                className={`flex-1 min-h-[44px] px-3 py-2 rounded-xl text-sm font-medium transition-all ${datePreset === 'today' ? 'bg-accent-green text-white shadow-sm' : 'bg-[#EEF1EB] dark:bg-white/5 text-secondary hover:text-primary'}`}
+                aria-pressed={datePreset === 'today'}
+              >
+                Today
+              </button>
+              <button
+                type="button"
+                onClick={() => selectDatePreset('yesterday')}
+                className={`flex-1 min-h-[44px] px-3 py-2 rounded-xl text-sm font-medium transition-all ${datePreset === 'yesterday' ? 'bg-accent-green text-white shadow-sm' : 'bg-[#EEF1EB] dark:bg-white/5 text-secondary hover:text-primary'}`}
+                aria-pressed={datePreset === 'yesterday'}
+              >
+                Yesterday
+              </button>
+            </div>
             <input
               type="date"
               {...register('date', { required: true })}
               className="input-field font-sans text-sm"
-              aria-label={`${transactionType === 'income' ? 'Income' : 'Expense'} date`}
+              aria-label={`${isExpense ? 'Expense' : 'Income'} date`}
               aria-required="true"
             />
           </div>
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-secondary dark:text-secondary/70 mb-2">
-              Note <span className="text-secondary/50 font-normal font-sans lowercase italic">(optional)</span>
+              Note <span className="text-secondary/50 font-normal lowercase italic">(optional)</span>
             </label>
             <input
               type="text"
               {...register('note')}
               className="input-field text-sm"
-              placeholder={transactionType === 'income' ? 'Where did this income come from?' : 'What did you buy?'}
+              placeholder={isExpense ? 'What did you buy?' : 'Where did this income come from?'}
               aria-label="Optional note"
             />
           </div>
@@ -460,21 +561,21 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
             </div>
           )}
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="btn-secondary flex-1"
+              className="btn-secondary flex-1 min-h-[44px]"
               aria-label="Cancel and close"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="btn-primary flex-1"
-              aria-label={editTransaction ? 'Save changes' : (transactionType === 'income' ? 'Add Income' : 'Add Expense')}
+              className="btn-primary flex-1 min-h-[44px]"
+              aria-label={editTransaction ? 'Save changes' : (isExpense ? 'Add Expense' : 'Add Income')}
             >
-              {editTransaction ? 'Save Changes' : (transactionType === 'income' ? 'Add Income' : 'Add Expense')}
+              {editTransaction ? 'Save Changes' : (isExpense ? 'Add Expense' : 'Add Income')}
             </button>
           </div>
         </form>
