@@ -98,11 +98,21 @@ export function AuthModal({ isOpen, onClose, onSuccess, isRecovery = false }: Au
   useEffect(() => {
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown)
-      setTimeout(() => {
+      const focusTimer = setTimeout(() => {
         const firstInput = modalRef.current?.querySelector('input')
-        firstInput?.focus()
+        // Never steal focus if the user is already interacting with a field in
+        // this modal — otherwise rapid re-renders yank focus back to the first
+        // input and make the password field impossible to type into.
+        if (firstInput && !modalRef.current?.contains(document.activeElement)) {
+          firstInput.focus()
+        }
       }, 50)
       document.body.style.overflow = 'hidden'
+      return () => {
+        clearTimeout(focusTimer)
+        document.removeEventListener('keydown', handleKeyDown)
+        document.body.style.overflow = ''
+      }
     }
     return () => {
       document.removeEventListener('keydown', handleKeyDown)

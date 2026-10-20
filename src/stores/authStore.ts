@@ -88,8 +88,18 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({ session, user: session?.user ?? null, isGuest, isLoading: false })
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          (_event: string, session: Session | null) => {
-            set({ session, user: session?.user ?? null, isLoading: false })
+          (_event: string, nextSession: Session | null) => {
+            // Only update the store when something actually changed, otherwise
+            // every auth event re-renders the whole app (and re-arms effects).
+            const prev = useAuthStore.getState()
+            const nextUser = nextSession?.user ?? null
+            if (
+              prev.session?.access_token === nextSession?.access_token &&
+              prev.user?.id === nextUser?.id
+            ) {
+              return
+            }
+            set({ session: nextSession, user: nextUser, isLoading: false })
           }
         )
 

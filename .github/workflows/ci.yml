@@ -6,12 +6,6 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      deploy:
-        description: 'Deploy to production?'
-        required: false
-        default: 'false'
-        type: boolean
 
 jobs:
   ci:
@@ -19,16 +13,22 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          set -o pipefail
+          npm ci --no-audit 2>&1 | tee /tmp/npm-ci.log || {
+            echo "::error::npm ci failed - full output follows"
+            while IFS= read -r line; do echo "::error::$line"; done < <(tail -60 /tmp/npm-ci.log)
+            exit 1
+          }
 
       - name: TypeScript check
         run: npx tsc --noEmit
@@ -65,7 +65,7 @@ jobs:
     environment: production
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Sun, Moon, Mic } from 'lucide-react'
 import { useAuthStore } from './stores/authStore'
 import { useThemeStore } from './stores/themeStore'
@@ -50,9 +50,14 @@ function App() {
     return () => clearInterval(interval)
   }, [])
 
-  const handleAuthSuccess = () => {
+  const handleAuthSuccess = useCallback(() => {
     setShowAuthModal(false)
-  }
+  }, [])
+
+  const handleAuthClose = useCallback(() => {
+    setShowAuthModal(false)
+    setIsRecovery(false)
+  }, [])
 
   const handleGuestContinue = () => {
     setGuestMode(true)
@@ -237,7 +242,7 @@ function App() {
         </div>
         <AuthModal
           isOpen={showAuthModal}
-          onClose={() => { setShowAuthModal(false); setIsRecovery(false) }}
+          onClose={handleAuthClose}
           onSuccess={handleAuthSuccess}
           isRecovery={isRecovery}
         />
