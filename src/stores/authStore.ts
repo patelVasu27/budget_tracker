@@ -1,6 +1,9 @@
 import { create } from 'zustand'
 import type { User, Session } from '@supabase/supabase-js'
-import { useApiLayer } from './dataStore'
+import { supabase } from '../lib/supabase'
+
+// Local copy to avoid a circular import between authStore and dataStore.
+const useApiLayer = () => import.meta.env.VITE_USE_API_LAYER === 'true'
 
 interface AuthState {
   user: User | null
@@ -103,17 +106,6 @@ export const useAuthStore = create<AuthState>((set) => ({
 // API-layer auth helpers (only used when VITE_USE_API_LAYER=true)
 // ---------------------------------------------------------------------------
 
-let supabase: any = null
-
-async function getSupabase() {
-  if (supabase) return supabase
-  const { createClient } = await import('@supabase/supabase-js')
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-  supabase = createClient(supabaseUrl || 'https://placeholder.supabase.co', supabaseAnonKey || 'placeholder')
-  return supabase
-}
-
 async function fetchSession(): Promise<SessionResponse> {
   const response = await fetch('/api/auth/session', {
     method: 'GET',
@@ -170,4 +162,4 @@ async function apiSignOut(): Promise<void> {
 }
 
 // Export for use in components
-export { apiSignIn, apiSignUp, apiSignOut, fetchSession, getSupabase }
+export { apiSignIn, apiSignUp, apiSignOut, fetchSession }
