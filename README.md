@@ -46,7 +46,7 @@
 
 SimpleBudget is a minimalist, free, and open-source web application designed for quick and seamless monthly income and expense tracking. Built with the philosophy that financial tracking should be frictionless, it allows users to log an expense via text or voice and see their remaining balance in under 5 seconds. The platform runs entirely in the browser, leveraging the native Web Speech API for voice inputs, React for a snappy UI, and Supabase for secure data management and authentication.
 
-**Version 3.0** introduces a thin API layer on Vercel, hardened authorization with defense-in-depth, month navigation for historical records, password reset flows, and a 83% reduction in gzipped bundle size.
+**Version 3.0** introduces hardened authorization with defense-in-depth, month navigation for historical records, password reset flows, and an 83% reduction in gzipped bundle size.
 
 ---
 
@@ -81,7 +81,7 @@ SimpleBudget v3.0 is built with defense-in-depth:
 - **CSV/Excel formula injection protection** — All exported values starting with `=`, `+`, `-`, `@`, or TAB are neutralized with a leading single quote (CWE-1236).
 - **No console PII** — Voice transcripts and spoken notes are never logged to the browser console.
 - **Rate limiting** — Client-side lockout after 5 failed sign-in attempts (30-second cooldown).
-- **Server-side API layer (optional)** — A thin Vercel serverless API (`api/`) enforces authorization in TypeScript with HTTP-only cookies. Enable via `VITE_USE_API_LAYER=true`. Anon key never ships to the browser when enabled.
+- **Server-side API layer (planned)** — A thin Vercel serverless API enforcing authorization in TypeScript with HTTP-only cookies. The code is preserved in git history and can be reactivated later. Currently the app uses direct Supabase access, with RLS as the authorization boundary.
 
 ---
 
@@ -92,31 +92,6 @@ SimpleBudget v3.0 is built with defense-in-depth:
     ├── .github/
     │   └── workflows/
     │       └── ci.yml
-    ├── api/                                          # Vercel serverless functions (thin API layer)
-    │   ├── _lib/
-    │   │   ├── auth.ts        # JWT verification, session cookies, token refresh
-    │   │   ├── db.ts          # Supabase service-role client (server-side only)
-    │   │   ├── errors.ts      # Standardized error responses
-    │   │   └── validate.ts    # Zod schemas for all endpoints
-    │   ├── auth/
-    │   │   ├── signup.ts
-    │   │   ├── signin.ts
-    │   │   ├── signout.ts
-    │   │   ├── session.ts
-    │   │   ├── reset-password.ts
-    │   │   └── update-password.ts
-    │   ├── transactions/
-    │   │   ├── index.ts       # GET list, POST create
-    │   │   └── [id].ts        # PUT update, DELETE
-    │   ├── monthly-settings/
-    │   │   └── index.ts       # GET, PUT upsert
-    │   ├── categories/
-    │   │   ├── index.ts       # GET list, POST create
-    │   │   ├── [id].ts        # PUT update, DELETE
-    │   │   └── reorder.ts     # PUT batch reorder
-    │   └── category-groups/
-    │       ├── index.ts       # GET list, POST create
-    │       └── [id].ts        # PUT update, DELETE
     ├── public/
     │   ├── logo.png           # Custom branded logo (256x256, 45 KB)
     │   └── favicon.png        # (Removed — was 1.5 MB duplicate)
@@ -147,7 +122,7 @@ SimpleBudget v3.0 is built with defense-in-depth:
     │   │   ├── dataStore.ts          # DataStore interface + factory
     │   │   ├── localStore.ts         # localStorage implementation
     │   │   ├── remoteStore.ts        # Direct Supabase implementation
-    │   │   ├── remoteStoreV2.ts      # API-based implementation
+    │   │   ├── remoteStoreV2.ts      # API-based implementation (for future use)
     │   │   └── themeStore.ts
     │   ├── test/
     │   │   └── integration/
@@ -223,27 +198,23 @@ Run the development server locally:
 
 Open [http://localhost:5173](http://localhost:5173) in your browser to view the application.
 
-### 🔧 API Layer (Optional)
+### 🔧 API Layer (Deferred)
 
-To use the thin Vercel API layer instead of direct Supabase access:
+The app currently talks to Supabase directly from the browser, with Row-Level Security as the
+authorization boundary. A server-side API layer was prototyped but deferred because its
+dependencies were not declared, which broke the Vercel build.
 
-1. Set these **server-side** variables in your Vercel dashboard (Project → Settings → Environment Variables):
+To reactivate it later:
 
-   ```
-   SUPABASE_URL=https://your-project.supabase.co
-   SUPABASE_SERVICE_ROLE_KEY=eyJ...
-   SITE_URL=https://yourapp.vercel.app
-   ```
+1. Restore the `api/` directory: `git checkout defedae -- api/`
+2. Add the missing dependencies: `npm i zod @vercel/node`
+3. Move the `throw` in `api/_lib/db.ts` and `api/_lib/auth.ts` out of module scope into a lazy
+   initializer, so the functions build without env vars present
+4. Set the server-side env vars in Vercel (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SITE_URL`)
+5. Enable the feature flag: `VITE_USE_API_LAYER=true`
 
-2. Enable the feature flag:
-
-   ```
-   VITE_USE_API_LAYER=true
-   ```
-
-   Add this to `.env.local` for local development, or to Vercel environment variables for production.
-
-3. Default is `false` (direct Supabase access). Flip to `true` to route through the API layer. Fully reversible at any time.
+The client-side wiring (`RemoteStoreV2`, the auth helpers, and the `VITE_USE_API_LAYER` flag) is
+already in place, so no frontend changes are needed.
 
 ### 🧪 Testing
 
