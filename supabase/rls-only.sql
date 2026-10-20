@@ -1,4 +1,6 @@
 -- RLS Setup for SimpleBudget (run in Supabase SQL Editor)
+-- ⚠️  WARNING: NEVER run this against the PRODUCTION project.
+--     Apply to a DEV branch/project first, verify, then promote to production.
 -- Note: Tables already exist, so we only enable RLS and create policies
 
 -- ============================================================================

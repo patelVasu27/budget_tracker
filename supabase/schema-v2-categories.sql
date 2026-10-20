@@ -232,4 +232,15 @@ BEGIN
 END $$;
 
 -- Add a unique constraint on user_id for the categories table after migration
-ALTER TABLE public.categories ADD CONSTRAINT unique_user_category_name UNIQUE (user_id, LOWER(name));
+-- (idempotent: skip if the constraint already exists)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'unique_user_category_name'
+      AND conrelid = 'public.categories'::regclass
+  ) THEN
+    ALTER TABLE public.categories
+      ADD CONSTRAINT unique_user_category_name UNIQUE (user_id, LOWER(name));
+  END IF;
+END $$;

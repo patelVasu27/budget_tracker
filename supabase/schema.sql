@@ -1,5 +1,7 @@
 -- SimpleBudget Database Schema with Row-Level Security (RLS)
--- Run this script in Supabase SQL Editor to set up tables and security policies
+-- ⚠️  WARNING: NEVER run this against the PRODUCTION project.
+--     Apply to a DEV branch/project first, verify, then promote to production.
+--     Run in Supabase SQL Editor to set up tables and security policies
 
 -- ============================================================================
 -- TABLES

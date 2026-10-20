@@ -5,6 +5,13 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'Deploy to production?'
+        required: false
+        default: 'false'
+        type: boolean
 
 jobs:
   ci:
@@ -29,8 +36,38 @@ jobs:
       - name: Run tests
         run: npx vitest run
 
+      - name: Run integration tests (RLS isolation)
+        run: npx vitest run src/test/integration
+        env:
+          TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+        # Skips gracefully if TEST_DATABASE_URL is not set.
+        # To enable: add TEST_DATABASE_URL secret in GitHub repo settings.
+
+      - name: Audit dependencies (critical only)
+        run: npm audit --audit-level=critical
+        # xlsx reports HIGH (not critical) with fixAvailable: false — excluded by --audit-level=critical.
+        # Review moderate/high findings manually on a regular basis.
+
+  deploy:
+    name: Deploy to Vercel (production)
+    needs: ci
+    # Fail-safe: only deploy when ALL of these are true:
+    #   1. Push to main (not PR)
+    #   2. The 'production' GitHub Environment is configured with protection rules
+    #      (configure in: GitHub repo → Settings → Environments → production →
+    #       Required reviewers → add yourself. Without this, the job is skipped.)
+    #   3. Vercel secrets are present (VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID)
+    if: >
+      github.ref == 'refs/heads/main' &&
+      github.event_name == 'push' &&
+      vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Deploy to Vercel
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}

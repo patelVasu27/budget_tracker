@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { format } from 'date-fns'
-import { Download, LogOut, Plus, Settings, Tags, Sun, Moon, User, ChevronDown } from 'lucide-react'
+import { Download, LogOut, Plus, Settings, Tags, Sun, Moon, User, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { VoiceMicButton } from '../components/VoiceMicButton'
 import { parseAmount } from '../hooks/useAmountParser'
 import { matchCategory } from '../lib/categoryMatcher'
@@ -11,10 +11,12 @@ import { useThemeStore } from '../stores/themeStore'
 import { BalanceCard } from '../components/BalanceCard'
 import { TransactionList } from '../components/TransactionList'
 import { AddExpenseModal } from '../components/AddExpenseModal'
-import { CategoryManager } from './CategoryManager'
-import { ExportModal } from '../components/ExportModal'
+import { lazy, Suspense } from 'react'
+const CategoryManager = lazy(() => import('./CategoryManager').then(m => ({ default: m.CategoryManager })))
+const ExportModal = lazy(() => import('../components/ExportModal').then(m => ({ default: m.ExportModal })))
 import { Tooltip } from '../components/Tooltip'
 import { useCategories } from '../hooks/useCategories'
+import { useDataStore } from '../stores/dataStore'
 import type { Transaction, MonthlySettings } from '../types'
 
 export function Dashboard() {
@@ -37,7 +39,26 @@ export function Dashboard() {
 
   const currentMonth = new Date().getMonth() + 1
   const currentYear = new Date().getFullYear()
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth)
+  const [selectedYear, setSelectedYear] = useState(currentYear)
+  const isCurrentMonth = selectedMonth === currentMonth && selectedYear === currentYear
+
+  const navigateMonth = (delta: number) => {
+    let newMonth = selectedMonth + delta
+    let newYear = selectedYear
+    if (newMonth > 12) { newMonth = 1; newYear++ }
+    if (newMonth < 1) { newMonth = 12; newYear-- }
+    setSelectedMonth(newMonth)
+    setSelectedYear(newYear)
+  }
+
+  const goToToday = () => {
+    setSelectedMonth(currentMonth)
+    setSelectedYear(currentYear)
+  }
+
   const activeUserId = isGuest ? 'guest' : user?.id
+  const store = useDataStore()
   const { data: allCategories = [] } = useCategories(activeUserId)
   const categoryMeta: Record<string, { color?: string | null; icon?: string | null }> = {}
   allCategories.forEach(c => {
@@ -60,168 +81,30 @@ export function Dashboard() {
   }, [showUserMenu])
 
   const { data: settings } = useQuery<MonthlySettings | null>({
-    queryKey: ['monthlySettings', activeUserId, currentMonth, currentYear],
+    queryKey: ['monthlySettings', activeUserId, selectedMonth, selectedYear],
     queryFn: async () => {
-      if (isGuest) {
-        const key = `guest_settings_${currentYear}_${currentMonth}`
-        const local = localStorage.getItem(key)
-        if (local) return JSON.parse(local) as MonthlySettings
-        
-        const defaultSettings: MonthlySettings = {
-          id: 'guest-settings',
-          user_id: 'guest',
-          income: 0,
-          month: currentMonth,
-          year: currentYear,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-        localStorage.setItem(key, JSON.stringify(defaultSettings))
-        return defaultSettings
-      }
-      if (!user) return null
-      const { data } = await supabase
-        .from('monthly_settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('month', currentMonth)
-        .eq('year', currentYear)
-        .single()
-      return data
+      if (!store) return null
+      return store.getMonthlySettings(selectedMonth, selectedYear)
     },
-    enabled: !!activeUserId,
+    enabled: !!store,
   })
 
-  const { data: transactions = [], isPending: isLoadingTransactions } = useQuery<Transaction[]>({
-    queryKey: ['transactions', activeUserId, currentMonth, currentYear],
+  const { data: transactions = [], isPending: isLoadingTransactions, error: transactionsError, refetch: refetchTransactions } = useQuery<Transaction[]>({
+    queryKey: ['transactions', activeUserId, selectedMonth, selectedYear],
     queryFn: async () => {
-      if (isGuest) {
-        const local = localStorage.getItem('guest_transactions')
-        const initialized = localStorage.getItem('guest_initialized')
-        let allTransactions: Transaction[] = []
-        let parseFailed = false
-
-        if (local !== null) {
-          try {
-            allTransactions = JSON.parse(local) as Transaction[]
-            if (!Array.isArray(allTransactions)) {
-              allTransactions = []
-            }
-          } catch (e) {
-            console.error('Failed to parse guest_transactions:', e)
-            parseFailed = true
-          }
-        }
-
-        if (initialized !== 'true' || local === null || parseFailed) {
-          const today = format(new Date(), 'yyyy-MM-dd')
-          const defaultTransactions: Transaction[] = [
-            {
-              id: 'tx-salary',
-              user_id: 'guest',
-              amount: 25000,
-              type: 'income',
-              category: 'Salary',
-              category_id: 'cat-salary',
-              note: 'Seeded monthly income',
-              date: today,
-              created_at: new Date().toISOString()
-            },
-            {
-              id: 'tx-food',
-              user_id: 'guest',
-              amount: 250,
-              type: 'expense',
-              category: 'Food',
-              category_id: 'cat-food',
-              note: 'Dinner at restaurant',
-              date: today,
-              created_at: new Date(Date.now() - 1000).toISOString()
-            },
-            {
-              id: 'tx-transport',
-              user_id: 'guest',
-              amount: 150,
-              type: 'expense',
-              category: 'Transport',
-              category_id: 'cat-transport',
-              note: 'Uber ride',
-              date: today,
-              created_at: new Date(Date.now() - 2000).toISOString()
-            }
-          ]
-          localStorage.setItem('guest_transactions', JSON.stringify(defaultTransactions))
-          localStorage.setItem('guest_initialized', 'true')
-          allTransactions = defaultTransactions
-        }
-
-        const filtered = allTransactions.filter(tx => {
-          if (!tx.date || typeof tx.date !== 'string') return false
-          const parts = tx.date.split('-')
-          if (parts.length < 2) return false
-          const year = parseInt(parts[0], 10)
-          const month = parseInt(parts[1], 10)
-          return year === currentYear && month === currentMonth
-        })
-
-        filtered.sort((a, b) => {
-          const dateDiff = b.date.localeCompare(a.date)
-          if (dateDiff !== 0) return dateDiff
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        })
-
-        return filtered
-      }
-
-      if (!user) return []
-      const startDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`
-      const lastDay = new Date(currentYear, currentMonth, 0)
+      if (!store) return []
+      const startDate = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`
+      const lastDay = new Date(selectedYear, selectedMonth, 0)
       const endDate = format(lastDay, 'yyyy-MM-dd')
-      
-      const { data } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('date', startDate)
-        .lte('date', endDate)
-        .order('date', { ascending: false })
-      return data || []
+      return store.listTransactions(startDate, endDate, isCurrentMonth, 200)
     },
-    enabled: !!activeUserId,
+    enabled: !!store,
   })
 
   const saveIncomeMutation = useMutation({
     mutationFn: async (newIncomeValue: number) => {
-      if (isGuest) {
-        const key = `guest_settings_${currentYear}_${currentMonth}`
-        const newSettings: MonthlySettings = {
-          id: settings?.id || 'guest-settings',
-          user_id: 'guest',
-          income: newIncomeValue,
-          month: currentMonth,
-          year: currentYear,
-          created_at: settings?.created_at || new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-        localStorage.setItem(key, JSON.stringify(newSettings))
-        return newSettings
-      }
-      if (!user) return
-      if (settings) {
-        const { error } = await supabase
-          .from('monthly_settings')
-          .update({ income: newIncomeValue, updated_at: new Date().toISOString() })
-          .eq('id', settings.id)
-        if (error) throw error
-      } else {
-        const { error } = await supabase.from('monthly_settings').insert({
-          user_id: user.id,
-          income: newIncomeValue,
-          month: currentMonth,
-          year: currentYear,
-        })
-        if (error) throw error
-      }
+      if (!store) return
+      return store.upsertMonthlyIncome(newIncomeValue, selectedMonth, selectedYear, settings ?? null)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['monthlySettings'] })
@@ -230,23 +113,8 @@ export function Dashboard() {
 
   const deleteTransactionMutation = useMutation({
     mutationFn: async (id: string) => {
-      if (isGuest) {
-        const local = localStorage.getItem('guest_transactions')
-        if (local) {
-          try {
-            const transactions: Transaction[] = JSON.parse(local)
-            if (Array.isArray(transactions)) {
-              const filtered = transactions.filter(tx => tx.id !== id)
-              localStorage.setItem('guest_transactions', JSON.stringify(filtered))
-            }
-          } catch (e) {
-            console.error('Failed to parse guest_transactions during deletion:', e)
-          }
-        }
-        return
-      }
-      const { error } = await supabase.from('transactions').delete().eq('id', id)
-      if (error) throw error
+      if (!store) return
+      return store.deleteTransaction(id)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
@@ -266,9 +134,8 @@ const handleVoiceResult = (transcript: string) => {
       .replace(/\s+/g, ' ')
       .trim()
 
-    console.info('[Voice Parsing]', { transcript, amount, category: bestGuess, note: cleanNote })
-    
     const isIncome = /\b(?:received|earned|income|salary|bonus|gift|freelance|sold|deposit|interest|dividend)\b/i.test(transcript)
+    console.info('[Voice Parsing]', { amount, category: bestGuess, type: isIncome ? 'income' : 'expense' })
     setVoicePrefill({ 
       amount: amount || 0,
       category: bestGuess, 
@@ -303,14 +170,18 @@ const handleVoiceResult = (transcript: string) => {
     }
   }, [settings])
 
-  const totalExpenses = transactions
+  // Use integer-cents arithmetic to avoid floating-point drift
+  const toCents = (amount: number) => Math.round(amount * 100)
+  const totalExpensesCents = transactions
     .filter(tx => tx.type === 'expense')
-    .reduce((sum, tx) => sum + tx.amount, 0)
-  const totalIncomeTransactions = transactions
+    .reduce((sum, tx) => sum + toCents(tx.amount), 0)
+  const totalIncomeTransactionsCents = transactions
     .filter(tx => tx.type === 'income')
-    .reduce((sum, tx) => sum + tx.amount, 0)
-  const totalIncome = income + totalIncomeTransactions
-  const remainingBalance = totalIncome - totalExpenses
+    .reduce((sum, tx) => sum + toCents(tx.amount), 0)
+  const totalIncomeCents = toCents(income) + totalIncomeTransactionsCents
+  const totalExpenses = totalExpensesCents / 100
+  const totalIncome = totalIncomeCents / 100
+  const remainingBalance = (totalIncomeCents - totalExpensesCents) / 100
 
   const handleSaveIncome = () => {
     const value = parseFloat(newIncome)
@@ -341,7 +212,34 @@ const handleVoiceResult = (transcript: string) => {
             </div>
             <div>
               <h1 className="text-xl font-black text-primary dark:text-[#E8ECE4] font-display tracking-tight select-none">Budget Pulse</h1>
-              <p className="text-[11px] font-bold tracking-widest text-secondary/70 dark:text-secondary uppercase mt-0.5">{format(new Date(), 'MMMM yyyy')}</p>
+              <div className="flex items-center gap-1 mt-0.5">
+                <button
+                  onClick={() => navigateMonth(-1)}
+                  className="p-0.5 text-secondary/70 hover:text-primary dark:hover:text-[#E8ECE4] transition-colors rounded"
+                  aria-label="Previous month"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <p className="text-[11px] font-bold tracking-widest text-secondary/70 dark:text-secondary uppercase min-w-[100px] text-center">
+                  {format(new Date(selectedYear, selectedMonth - 1), 'MMMM yyyy')}
+                </p>
+                <button
+                  onClick={() => navigateMonth(1)}
+                  className="p-0.5 text-secondary/70 hover:text-primary dark:hover:text-[#E8ECE4] transition-colors rounded"
+                  aria-label="Next month"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+                {!isCurrentMonth && (
+                  <button
+                    onClick={goToToday}
+                    className="ml-1 text-[10px] font-bold text-accent-green hover:underline"
+                    aria-label="Jump to current month"
+                  >
+                    Today
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           
@@ -534,6 +432,19 @@ const handleVoiceResult = (transcript: string) => {
                   ))}
                   <span className="sr-only">Loading your data</span>
                 </div>
+              ) : transactionsError ? (
+                <div className="text-center py-8 space-y-3" role="alert">
+                  <p className="text-sm text-accent-red font-medium">
+                    Couldn't load your transactions. Please try again.
+                  </p>
+                  <button
+                    onClick={() => refetchTransactions()}
+                    className="btn-secondary px-4 py-2 text-sm"
+                    aria-label="Retry loading transactions"
+                  >
+                    Retry
+                  </button>
+                </div>
               ) : (
                 <TransactionList
                   transactions={transactions}
@@ -558,16 +469,22 @@ const handleVoiceResult = (transcript: string) => {
           currentBalance={remainingBalance}
         />
 
-        <CategoryManager
-          isOpen={showCategoryManager}
-          onClose={() => setShowCategoryManager(false)}
-        />
+        <Suspense fallback={null}>
+          <CategoryManager
+            isOpen={showCategoryManager}
+            onClose={() => setShowCategoryManager(false)}
+          />
+        </Suspense>
 
-        <ExportModal
-          isOpen={showExportModal}
-          onClose={() => setShowExportModal(false)}
-          userId={activeUserId || ''}
-        />
+        <Suspense fallback={null}>
+          <ExportModal
+            isOpen={showExportModal}
+            onClose={() => setShowExportModal(false)}
+            userId={activeUserId || ''}
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+          />
+        </Suspense>
       </main>
     </div>
   )

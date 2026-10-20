@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { X, Plus, Trash2, FolderOpen, ChevronDown, ChevronRight, Search, GripVertical, ArrowUp, ArrowDown, Check } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
+import { useDataStore } from '../stores/dataStore'
 import {
   useCategories,
   useCategoryGroups,
@@ -21,6 +21,7 @@ interface CategoryManagerProps {
 
 export function CategoryManager({ isOpen, onClose }: CategoryManagerProps) {
   const { user, isGuest } = useAuthStore()
+  const store = useDataStore()
   const queryClient = useQueryClient()
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [showAddCategory, setShowAddCategory] = useState(false)
@@ -107,20 +108,11 @@ export function CategoryManager({ isOpen, onClose }: CategoryManagerProps) {
   }
 
   const persistCategoryOrder = async (ordered: Category[]) => {
-    if (!activeUserId) return
+    if (!store) return
     setIsReordering(true)
     try {
-      if (activeUserId === 'guest') {
-        const local = localStorage.getItem('guest_categories')
-        const all: Category[] = local ? JSON.parse(local) : []
-        const orderMap = new Map(ordered.map((c, idx) => [c.id, idx]))
-        const updated = all.map(c => orderMap.has(c.id) ? { ...c, sort_order: orderMap.get(c.id)! } : c)
-        localStorage.setItem('guest_categories', JSON.stringify(updated))
-      } else {
-        for (let i = 0; i < ordered.length; i++) {
-          await supabase.from('categories').update({ sort_order: i }).eq('id', ordered[i].id)
-        }
-      }
+      const orderMap = ordered.map((c, idx) => ({ id: c.id, sort_order: idx }))
+      await store.reorderCategories(orderMap)
       queryClient.invalidateQueries({ queryKey: ['categories', activeUserId] })
     } catch (e) {
       console.error('Reorder failed:', e)

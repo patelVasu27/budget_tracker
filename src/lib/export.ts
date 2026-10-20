@@ -1,13 +1,23 @@
-import * as XLSX from 'xlsx'
 import type { Transaction } from '../types'
+
+// Neutralizes CSV/Excel formula injection (CWE-1236).
+// Values starting with =, +, -, @, TAB, or CR are prefixed with a single quote
+// so spreadsheet apps treat them as text instead of executing them as formulas.
+function neutralizeFormula(value: string): string {
+  if (/^[=+\-@\t\r]/.test(value)) {
+    return "'" + value
+  }
+  return value
+}
 
 function escapeCSV(value: string | number | null | undefined): string {
   if (value == null) return ''
   const str = String(value)
-  if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
-    return `"${str.replace(/"/g, '""')}"`
+  const safe = neutralizeFormula(str)
+  if (safe.includes(',') || safe.includes('"') || safe.includes('\n') || safe.includes('\r')) {
+    return `"${safe.replace(/"/g, '""')}"`
   }
-  return str
+  return safe
 }
 
 function waitForIdle(): Promise<void> {
@@ -48,18 +58,18 @@ export async function generateCSV(
     rows.push('Category Summary')
     rows.push('Category,Type,Count,Total Amount')
 
-    const summary = new Map<string, { count: number; total: number; type: string }>()
+    const summary = new Map<string, { count: number; totalCents: number; type: string }>()
     for (const tx of transactions) {
       const cat = tx.category || 'Uncategorized'
       const type = tx.type || 'expense'
-      const prev = summary.get(cat) ?? { count: 0, total: 0, type }
+      const prev = summary.get(cat) ?? { count: 0, totalCents: 0, type }
       prev.count++
-      prev.total += tx.amount
+      prev.totalCents += Math.round(tx.amount * 100)
       summary.set(cat, prev)
     }
 
-    for (const [category, { count, total, type }] of summary) {
-      rows.push([escapeCSV(category), escapeCSV(type), escapeCSV(count), escapeCSV(total.toFixed(2))].join(','))
+    for (const [category, { count, totalCents, type }] of summary) {
+      rows.push([escapeCSV(category), escapeCSV(type), escapeCSV(count), escapeCSV((totalCents / 100).toFixed(2))].join(','))
     }
   }
 
@@ -71,34 +81,38 @@ export async function generateXLSX(
   transactions: Transaction[],
   includeSummary: boolean
 ): Promise<Blob> {
+  // Lazy-load xlsx (SheetJS) on demand — it is ~600 kB raw and only needed
+  // when the user explicitly exports to XLSX. Never loaded on initial page load.
+  const XLSX = await import('xlsx')
+
   const wb = XLSX.utils.book_new()
 
   const txData = transactions.map((tx) => ({
-    Date: tx.date,
+    Date: neutralizeFormula(tx.date),
     Amount: tx.amount,
-    Type: tx.type || 'expense',
-    Category: tx.category,
-    Note: tx.note || '',
+    Type: neutralizeFormula(tx.type || 'expense'),
+    Category: neutralizeFormula(tx.category),
+    Note: neutralizeFormula(tx.note || ''),
   }))
   const txSheet = XLSX.utils.json_to_sheet(txData)
   XLSX.utils.book_append_sheet(wb, txSheet, 'Transactions')
 
   if (includeSummary && transactions.length > 0) {
-    const summary = new Map<string, { count: number; total: number; type: string }>()
+    const summary = new Map<string, { count: number; totalCents: number; type: string }>()
     for (const tx of transactions) {
       const cat = tx.category || 'Uncategorized'
       const type = tx.type || 'expense'
-      const prev = summary.get(cat) ?? { count: 0, total: 0, type }
+      const prev = summary.get(cat) ?? { count: 0, totalCents: 0, type }
       prev.count++
-      prev.total += tx.amount
+      prev.totalCents += Math.round(tx.amount * 100)
       summary.set(cat, prev)
     }
 
-    const summaryData = Array.from(summary.entries()).map(([category, { count, total, type }]) => ({
-      Category: category,
-      Type: type,
+    const summaryData = Array.from(summary.entries()).map(([category, { count, totalCents, type }]) => ({
+      Category: neutralizeFormula(category),
+      Type: neutralizeFormula(type),
       Count: count,
-      'Total Amount': parseFloat(total.toFixed(2)),
+      'Total Amount': parseFloat((totalCents / 100).toFixed(2)),
     }))
 
     const summarySheet = XLSX.utils.json_to_sheet(summaryData)

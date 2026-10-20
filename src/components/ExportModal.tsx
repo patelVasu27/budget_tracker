@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { X, Download, FileText, Check } from 'lucide-react'
 import { format } from 'date-fns'
-import { supabase } from '../lib/supabase'
+import { useDataStore } from '../stores/dataStore'
 import { generateCSV, generateXLSX, getExportFilename } from '../lib/export'
 import type { ExportFormat } from '../lib/export'
 import type { Transaction } from '../types'
@@ -10,11 +10,14 @@ interface ExportModalProps {
   isOpen: boolean
   onClose: () => void
   userId: string
+  selectedMonth?: number
+  selectedYear?: number
 }
 
 type DatePreset = 'thisMonth' | 'lastMonth' | 'last3' | 'custom'
 
-export function ExportModal({ isOpen, onClose, userId }: ExportModalProps) {
+export function ExportModal({ isOpen, onClose, userId: _userId, selectedMonth, selectedYear }: ExportModalProps) {
+  const store = useDataStore()
   const today = new Date()
   const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
 
@@ -50,9 +53,18 @@ export function ExportModal({ isOpen, onClose, userId }: ExportModalProps) {
       setError('')
       setIsSuccess(false)
       setIsExporting(false)
-      setPreset('thisMonth')
-      setDateFrom(format(firstOfMonth, 'yyyy-MM-dd'))
-      setDateTo(format(today, 'yyyy-MM-dd'))
+      // Pre-populate with selected month's range if viewing a non-current month
+      if (selectedMonth && selectedYear && (selectedMonth !== today.getMonth() + 1 || selectedYear !== today.getFullYear())) {
+        const first = new Date(selectedYear, selectedMonth - 1, 1)
+        const last = new Date(selectedYear, selectedMonth, 0)
+        setDateFrom(format(first, 'yyyy-MM-dd'))
+        setDateTo(format(last, 'yyyy-MM-dd'))
+        setPreset('custom')
+      } else {
+        setPreset('thisMonth')
+        setDateFrom(format(firstOfMonth, 'yyyy-MM-dd'))
+        setDateTo(format(today, 'yyyy-MM-dd'))
+      }
     }
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
@@ -89,34 +101,10 @@ export function ExportModal({ isOpen, onClose, userId }: ExportModalProps) {
 
     try {
       let transactions: Transaction[] = []
-      if (userId === 'guest') {
-        const local = localStorage.getItem('guest_transactions')
-        let allTransactions: Transaction[] = []
-        if (local) {
-          try {
-            allTransactions = JSON.parse(local)
-            if (!Array.isArray(allTransactions)) {
-              allTransactions = []
-            }
-          } catch (e) {
-            console.error('Failed to parse guest_transactions in ExportModal:', e)
-          }
-        }
-        transactions = allTransactions.filter(tx => tx.date >= dateFrom && tx.date <= dateTo)
-        // Sort by date ascending to match Supabase order
-        transactions.sort((a, b) => a.date.localeCompare(b.date))
-      } else {
-        const { data, error: fetchError } = await supabase
-          .from('transactions')
-          .select('*')
-          .eq('user_id', userId)
-          .gte('date', dateFrom)
-          .lte('date', dateTo)
-          .order('date', { ascending: true })
-
-        if (fetchError) throw fetchError
-        transactions = (data || []) as Transaction[]
-      }
+      if (!store) return
+      transactions = await store.listTransactions(dateFrom, dateTo)
+      // Sort by date ascending to match Supabase order
+      transactions.sort((a, b) => a.date.localeCompare(b.date))
 
       if (transactions.length === 0) {
         setError('No transactions found in this date range.')

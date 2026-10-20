@@ -9,6 +9,16 @@ function App() {
   const { user, isLoading, isGuest, initialize, setGuestMode } = useAuthStore()
   const { isDarkMode, toggleDarkMode } = useThemeStore()
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [isRecovery, setIsRecovery] = useState(false)
+
+  // Detect password-reset recovery token in URL hash on mount
+  useEffect(() => {
+    const hash = window.location.hash
+    if (hash && hash.includes('type=recovery')) {
+      setIsRecovery(true)
+      setShowAuthModal(true)
+    }
+  }, [])
   const [waveformPhase, setWaveformPhase] = useState(0)
 
   useEffect(() => {
@@ -227,8 +237,9 @@ function App() {
         </div>
         <AuthModal
           isOpen={showAuthModal}
-          onClose={() => setShowAuthModal(false)}
+          onClose={() => { setShowAuthModal(false); setIsRecovery(false) }}
           onSuccess={handleAuthSuccess}
+          isRecovery={isRecovery}
         />
       </>
     )

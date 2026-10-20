@@ -3,8 +3,8 @@ import { X, Search } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { format } from 'date-fns'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
+import { useDataStore } from '../stores/dataStore'
 import { useCategoryPickerData } from '../hooks/useCategories'
 import type { Transaction } from '../types'
 
@@ -32,6 +32,7 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
   const [datePreset, setDatePreset] = useState<'today' | 'yesterday' | 'custom'>('today')
 
   const activeUserId = isGuest ? 'guest' : user?.id
+  const store = useDataStore()
   const { grouped, ungrouped, allCategories, isLoading } = useCategoryPickerData(activeUserId, transactionType)
 
   const { register, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm<ExpenseForm>({
@@ -194,50 +195,19 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
 
   const addMutation = useMutation({
     mutationFn: async (data: ExpenseForm) => {
+      if (!store) return
       const category = allCategories.find(c => c.id === data.categoryId)
-      if (isGuest) {
-        const local = localStorage.getItem('guest_transactions')
-        let transactions: Transaction[] = []
-        if (local) {
-          try {
-            transactions = JSON.parse(local)
-            if (!Array.isArray(transactions)) {
-              transactions = []
-            }
-          } catch (e) {
-            console.error('Failed to parse guest_transactions in addMutation:', e)
-          }
-        }
-        const newTx: Transaction = {
-          id: 'tx-' + Math.random().toString(36).substr(2, 9),
-          user_id: 'guest',
-          amount: parseFloat(data.amount),
-          type: transactionType,
-          category: category?.name || 'Other',
-          category_id: data.categoryId,
-          note: data.note || null,
-          date: data.date,
-          created_at: new Date().toISOString()
-        }
-        transactions.push(newTx)
-        localStorage.setItem('guest_transactions', JSON.stringify(transactions))
-        return newTx
-      }
-      if (!user) return
-
       const isUuid = (val: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
       const categoryIdToSend = data.categoryId && isUuid(data.categoryId) ? data.categoryId : null
 
-      const { error } = await supabase.from('transactions').insert({
-        user_id: user.id,
+      return store.addTransaction({
         amount: parseFloat(data.amount),
         type: transactionType,
         category: category?.name || 'Other',
-        category_id: categoryIdToSend,
+        categoryId: categoryIdToSend,
         note: data.note || null,
         date: data.date,
       })
-      if (error) throw error
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
@@ -249,48 +219,19 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
 
   const editMutation = useMutation({
     mutationFn: async (data: ExpenseForm & { id: string }) => {
+      if (!store) return
       const category = allCategories.find(c => c.id === data.categoryId)
-      if (isGuest) {
-        const local = localStorage.getItem('guest_transactions')
-        let transactions: Transaction[] = []
-        if (local) {
-          try {
-            transactions = JSON.parse(local)
-            if (!Array.isArray(transactions)) {
-              transactions = []
-            }
-          } catch (e) {
-            console.error('Failed to parse guest_transactions in editMutation:', e)
-          }
-        }
-        const updated = transactions.map(tx => tx.id === data.id ? {
-          ...tx,
-          amount: parseFloat(data.amount),
-          type: transactionType,
-          category: category?.name || 'Other',
-          category_id: data.categoryId,
-          note: data.note || null,
-          date: data.date
-        } : tx)
-        localStorage.setItem('guest_transactions', JSON.stringify(updated))
-        return
-      }
-
       const isUuid = (val: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
       const categoryIdToSend = data.categoryId && isUuid(data.categoryId) ? data.categoryId : null
 
-      const { error } = await supabase
-        .from('transactions')
-        .update({
-          amount: parseFloat(data.amount),
-          type: transactionType,
-          category: category?.name || 'Other',
-          category_id: categoryIdToSend,
-          note: data.note || null,
-          date: data.date,
-        })
-        .eq('id', data.id)
-      if (error) throw error
+      return store.updateTransaction(data.id, {
+        amount: parseFloat(data.amount),
+        type: transactionType,
+        category: category?.name || 'Other',
+        categoryId: categoryIdToSend,
+        note: data.note || null,
+        date: data.date,
+      })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })

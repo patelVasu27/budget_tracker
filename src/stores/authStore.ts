@@ -1,6 +1,6 @@
 import { create } from 'zustand'
-import { supabase } from '../lib/supabase'
 import type { User, Session } from '@supabase/supabase-js'
+import { useApiLayer } from './dataStore'
 
 interface AuthState {
   user: User | null
@@ -11,6 +11,32 @@ interface AuthState {
   clearSession: () => void
   setGuestMode: (value: boolean) => void
   initialize: () => Promise<(() => void) | undefined>
+}
+
+interface SignInResponse {
+  user: { id: string; email: string }
+  session: {
+    access_token: string
+    refresh_token: string
+    expires_at: number | null
+  } | null
+  email_confirmation_required: boolean
+}
+
+interface SessionResponse {
+  user: { id: string }
+  authenticated: boolean
+  session?: Session | null
+}
+
+interface SignUpResponse {
+  user: { id: string; email: string }
+  session: {
+    access_token: string
+    refresh_token: string
+    expires_at: number | null
+  } | null
+  email_confirmation_required: boolean
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -38,18 +64,110 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   initialize: async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const isGuest = localStorage.getItem('isGuest') === 'true'
-      set({ session, user: session?.user ?? null, isGuest, isLoading: false })
+      if (useApiLayer()) {
+        // Use API layer for session check
+        const session = await fetchSession()
+        set({ session: session.session ?? null, user: session.user ? { id: session.user.id, email: '' } as User : null, isLoading: false })
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        set({ session, user: session?.user ?? null, isLoading: false })
-      })
+        // Set up polling for auth state changes (equivalent to onAuthStateChange)
+        const interval = setInterval(async () => {
+          const updated = await fetchSession()
+          set({
+            session: updated.session ?? null,
+            user: updated.user ? { id: updated.user.id, email: '' } as User : null,
+          })
+        }, 30000)
 
-      return () => subscription.unsubscribe()
+        return () => clearInterval(interval)
+      } else {
+        const { data: { session } } = await supabase.auth.getSession()
+        const isGuest = localStorage.getItem('isGuest') === 'true'
+        set({ session, user: session?.user ?? null, isGuest, isLoading: false })
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          (_event: string, session: Session | null) => {
+            set({ session, user: session?.user ?? null, isLoading: false })
+          }
+        )
+
+        return () => subscription.unsubscribe()
+      }
     } catch (error) {
       console.error('Error initializing auth:', error)
       set({ isLoading: false })
     }
   },
 }))
+
+// ---------------------------------------------------------------------------
+// API-layer auth helpers (only used when VITE_USE_API_LAYER=true)
+// ---------------------------------------------------------------------------
+
+let supabase: any = null
+
+async function getSupabase() {
+  if (supabase) return supabase
+  const { createClient } = await import('@supabase/supabase-js')
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+  supabase = createClient(supabaseUrl || 'https://placeholder.supabase.co', supabaseAnonKey || 'placeholder')
+  return supabase
+}
+
+async function fetchSession(): Promise<SessionResponse> {
+  const response = await fetch('/api/auth/session', {
+    method: 'GET',
+    credentials: 'include', // Send cookies
+  })
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      return { user: { id: '' }, authenticated: false, session: null }
+    }
+    throw new Error(`Session check failed: ${response.status}`)
+  }
+
+  return (await response.json()) as SessionResponse
+}
+
+async function apiSignIn(email: string, password: string): Promise<SignInResponse> {
+  const response = await fetch('/api/auth/signin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+    credentials: 'include',
+  })
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}))
+    throw new Error(errorBody.error || 'Sign in failed')
+  }
+
+  return (await response.json()) as SignInResponse
+}
+
+async function apiSignUp(email: string, password: string): Promise<SignUpResponse> {
+  const response = await fetch('/api/auth/signup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+    credentials: 'include',
+  })
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}))
+    throw new Error(errorBody.error || 'Sign up failed')
+  }
+
+  return (await response.json()) as SignUpResponse
+}
+
+async function apiSignOut(): Promise<void> {
+  await fetch('/api/auth/signout', {
+    method: 'POST',
+    credentials: 'include',
+  })
+}
+
+// Export for use in components
+export { apiSignIn, apiSignUp, apiSignOut, fetchSession, getSupabase }
