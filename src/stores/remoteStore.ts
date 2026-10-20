@@ -101,9 +101,12 @@ export class RemoteStore implements DataStore {
       .eq('user_id', this.userId)
       .eq('month', month)
       .eq('year', year)
-      .single()
+      // maybeSingle() returns 200 with null when no row exists, instead of
+      // .single() which returns 406 (PostgREST "JSON object requested, no
+      // rows returned"). No settings for a month is the normal case.
+      .maybeSingle()
 
-    if (error && error.code !== 'PGRST116') throw error
+    if (error) throw error
     return (data as MonthlySettings) || null
   }
 
