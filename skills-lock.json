@@ -13,6 +13,18 @@
       "skillPath": "skills/frontend-design/SKILL.md",
       "computedHash": "516bd2154eb843a8240e43d5b285229129853114ad7075a5e141e1c08e408c84"
     },
+    "linkedin-posts": {
+      "source": "kostja94/marketing-skills",
+      "sourceType": "github",
+      "skillPath": "skills/platforms/linkedin/SKILL.md",
+      "computedHash": "18543b3ad03f6329e45732ba0c94fa09498986f3a226c5c129269abb2781ada0"
+    },
+    "linkedin-writer": {
+      "source": "ognjengt/founder-skills",
+      "sourceType": "github",
+      "skillPath": "skills/linkedin-writer/SKILL.md",
+      "computedHash": "c7d0da0bf5d0033dd8947449546bf937c6ac0632f2c31c4ad7bcedaa6650543d"
+    },
     "secure-code-guardian": {
       "source": "jeffallan/claude-skills",
       "sourceType": "github",

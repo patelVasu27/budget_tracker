@@ -312,8 +312,8 @@ const handleVoiceResult = (transcript: string) => {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8" aria-label="Dashboard">
-        <div className="grid md:grid-cols-[320px_1fr] gap-6 sm:gap-8 min-w-0">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6" aria-label="Dashboard">
+        <div className="grid md:grid-cols-[320px_1fr] gap-4 sm:gap-6 min-w-0">
           <aside className="space-y-4 min-w-0" aria-label="Monthly balance summary">
             <h2 className="text-xs font-bold text-secondary dark:text-secondary uppercase tracking-widest font-sans mb-1">Balance</h2>
             

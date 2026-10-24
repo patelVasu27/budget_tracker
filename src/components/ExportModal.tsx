@@ -160,7 +160,7 @@ export function ExportModal({ isOpen, onClose, userId: _userId, selectedMonth, s
       aria-labelledby="export-modal-heading"
     >
       <div className="absolute inset-0 bg-primary/20 dark:bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-      <div ref={modalRef} className="relative bg-surface dark:bg-[#1B2A1E] rounded-2xl shadow-modal w-full max-w-md p-6 animate-scale-in border border-white/20 dark:border-white/5">
+      <div ref={modalRef} className="relative bg-surface dark:bg-[#1B2A1E] rounded-2xl shadow-modal w-full max-w-[90vw] max-w-md p-4 sm:p-6 animate-scale-in border border-white/20 dark:border-white/5 max-h-[85vh] overflow-y-auto">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-2 min-w-[40px] min-h-[40px] text-secondary hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-primary/5 dark:hover:bg-white/5 rounded-lg transition-colors"

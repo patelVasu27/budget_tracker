@@ -7,6 +7,14 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      screens: {
+        'xs': '320px',
+        'sm': '375px',
+        'md': '768px',
+        'lg': '1024px',
+        'xl': '1280px',
+        '2xl': '1536px',
+      },
       colors: {
         background: '#F4F6F0',
         surface: '#FFFFFF',
@@ -31,8 +39,14 @@ export default {
         display: ['Fraunces', 'serif'],
       },
       fontSize: {
-        'hero': ['clamp(2.5rem, 6vw, 4.5rem)', { lineHeight: '0.9', letterSpacing: '-0.03em' }],
-        'balance-xl': ['clamp(2rem, 5vw, 3.5rem)', { lineHeight: '1.0', letterSpacing: '-0.02em' }],
+        'hero': ['clamp(2rem, 6vw, 4.5rem)', { lineHeight: '0.9', letterSpacing: '-0.03em' }],
+        'balance-xl': ['clamp(1.75rem, 5vw, 3.5rem)', { lineHeight: '1.0', letterSpacing: '-0.02em' }],
+      },
+      spacing: {
+        'safe-top': 'env(safe-area-inset-top)',
+        'safe-bottom': 'env(safe-area-inset-bottom)',
+        'safe-left': 'env(safe-area-inset-left)',
+        'safe-right': 'env(safe-area-inset-right)',
       },
       boxShadow: {
         'card': '0 2px 8px rgba(27, 42, 30, 0.03), 0 8px 20px rgba(27, 42, 30, 0.02)',

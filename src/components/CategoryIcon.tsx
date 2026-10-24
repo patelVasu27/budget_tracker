@@ -81,15 +81,15 @@ export function CategoryIcon({ category, color, icon, className = '', size = 'md
   const IconComponent = meta.icon
 
   const sizeClasses = {
-    sm: 'w-8 h-8 rounded-lg text-xs border',
-    md: 'w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl text-sm border',
-    lg: 'w-14 h-14 min-w-[56px] min-h-[56px] rounded-2xl text-base border-2',
+    sm: 'w-7 h-7 rounded-lg text-xs border min-w-[36px] min-h-[36px]',
+    md: 'w-10 h-10 min-w-[44px] min-h-[44px] rounded-xl text-sm border',
+    lg: 'w-12 h-12 min-w-[48px] min-h-[48px] rounded-2xl text-base border',
   }
 
   const iconSizes = {
-    sm: 14,
-    md: 18,
-    lg: 22,
+    sm: 12,
+    md: 16,
+    lg: 20,
   }
 
   const hasDynamic = (color != null && color !== '') || (icon != null && icon !== '')

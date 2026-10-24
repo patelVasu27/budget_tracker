@@ -86,8 +86,8 @@ function App() {
         <div className="min-h-screen bg-background dark:bg-[#0F1410] relative overflow-hidden transition-colors duration-300">
           {/* Single field color background with ₹ watermark */}
           <div className="absolute inset-0 pointer-events-none aria-hidden" aria-hidden="true">
-            {/* Large ₹ watermark */}
-            <svg className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] max-w-[500px] opacity-[0.03] dark:opacity-[0.05]" viewBox="0 0 200 200" preserveAspectRatio="none">
+            {/* Large ₹ watermark - responsive */}
+            <svg className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] max-w-[400px] opacity-[0.03] dark:opacity-[0.05]" viewBox="0 0 200 200" preserveAspectRatio="none">
               <text x="100" y="130" fontFamily="Fraunces, Georgia, serif" fontSize="180" fontWeight="700" textAnchor="middle" dominantBaseline="central" fill="currentColor">₹</text>
             </svg>
             {/* Subtle grain overlay */}
@@ -157,7 +157,7 @@ function App() {
                 <div className="relative w-full max-w-md">
                   {/* Phone frame mockup */}
                   <div className="relative bg-white/10 dark:bg-black/20 backdrop-blur-xl rounded-[36px] p-1.5 border border-white/20 dark:border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.15)]">
-                    <div className="bg-background dark:bg-[#0F1410] rounded-[32px] overflow-hidden min-h-[480px] max-h-[480px] flex flex-col">
+                    <div className="bg-background dark:bg-[#0F1410] rounded-[32px] overflow-hidden min-h-[400px] max-h-[60vh] flex flex-col">
                       {/* Status bar */}
                       <div className="flex items-center justify-between px-4 py-3 text-xs text-secondary/60 dark:text-secondary/40">
                         <span>9:41</span>

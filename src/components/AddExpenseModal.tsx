@@ -268,7 +268,7 @@ export function AddExpenseModal({ isOpen, onClose, editTransaction, voicePrefill
       aria-describedby="expense-modal-subtitle"
     >
       <div className="absolute inset-0 bg-primary/20 dark:bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-      <div ref={modalRef} className="relative bg-surface dark:bg-[#1B2A1E] rounded-2xl shadow-modal w-full max-w-md animate-scale-in max-h-[88vh] flex flex-col border border-white/20 dark:border-white/5">
+      <div ref={modalRef} className="relative bg-surface dark:bg-[#1B2A1E] rounded-2xl shadow-modal w-full max-w-[90vw] max-w-md animate-scale-in max-h-[88vh] flex flex-col border border-white/20 dark:border-white/5">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-2 text-secondary hover:text-primary dark:hover:text-[#E8ECE4] hover:bg-primary/5 dark:hover:bg-white/5 rounded-lg transition-colors z-10"

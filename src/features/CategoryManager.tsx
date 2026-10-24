@@ -240,7 +240,7 @@ export function CategoryManager({ isOpen, onClose }: CategoryManagerProps) {
           <GripVertical className="w-4 h-4" />
         </span>
         <span
-          className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0 border"
+          className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0 border"
           style={{
             backgroundColor: cat.color ? `${cat.color}14` : undefined,
             borderColor: cat.color ? `${cat.color}30` : undefined,
@@ -284,7 +284,7 @@ export function CategoryManager({ isOpen, onClose }: CategoryManagerProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Manage categories">
       <div className="absolute inset-0 bg-primary/20 dark:bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-      <div ref={modalRef} className="relative bg-surface dark:bg-[#1B2A1E] rounded-2xl shadow-modal w-full max-w-lg max-h-[85vh] flex flex-col animate-scale-in border border-white/20 dark:border-white/5">
+      <div ref={modalRef} className="relative bg-surface dark:bg-[#1B2A1E] rounded-2xl shadow-modal w-full max-w-[90vw] max-w-lg max-h-[85vh] flex flex-col animate-scale-in border border-white/20 dark:border-white/5 max-h-[85vh] overflow-y-auto">
         <div className="flex items-center justify-between p-5 border-b border-border-subtle dark:border-white/5">
           <div>
             <h2 className="text-lg font-bold text-primary dark:text-[#E8ECE4] font-display">Manage Categories</h2>

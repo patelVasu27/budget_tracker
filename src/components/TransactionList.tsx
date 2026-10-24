@@ -139,10 +139,10 @@ export function TransactionList({ transactions, categoryMeta, onEdit, onDelete, 
               <CategoryIcon category={tx.category} color={meta?.color} icon={meta?.icon} size="lg" />
 
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-primary dark:text-[#E8ECE4] text-sm leading-snug">{tx.category}</p>
-                <p className="text-xs text-secondary mt-0.5 truncate font-sans">
+                <p className="font-semibold text-primary dark:text-[#E8ECE4] text-sm leading-snug truncate">{tx.category}</p>
+                <p className="text-xs text-secondary mt-0.5 truncate font-sans overflow-hidden">
                   {format(parseLocalDate(tx.date), 'MMM d, yyyy')}
-                  {tx.note && <span className="text-secondary/60"> · {tx.note}</span>}
+                  {tx.note && <span className="text-secondary/60 overflow-hidden text-ellipsis whitespace-nowrap"> · {tx.note}</span>}
                 </p>
               </div>
 

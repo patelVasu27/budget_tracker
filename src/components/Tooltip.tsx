@@ -41,11 +41,13 @@ export function Tooltip({ content, children, position = 'top' }: TooltipProps) {
     setIsVisible(false);
   };
 
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
   return (
     <div
       className="relative flex items-center"
-      onMouseEnter={show}
-      onMouseLeave={hide}
+      onMouseEnter={isMobile ? undefined : show}
+      onMouseLeave={isMobile ? undefined : hide}
       onFocus={show}
       onBlur={hide}
       onTouchStart={show}
@@ -58,7 +60,7 @@ export function Tooltip({ content, children, position = 'top' }: TooltipProps) {
         <div
           id={tooltipId}
           role="tooltip"
-          className={`absolute z-[100] px-2 py-1 text-xs font-medium text-white bg-primary/90 dark:bg-accent-green rounded shadow-lg whitespace-nowrap animate-fade-in pointer-events-none ${positionClasses[position]}`}
+          className={`absolute z-[100] px-2 py-1 text-xs font-medium text-white bg-primary/90 dark:bg-accent-green rounded shadow-lg max-w-[200px] animate-fade-in pointer-events-none ${positionClasses[position]}`}
         >
           {content}
           <div className={`absolute w-2 h-2 bg-primary/90 dark:bg-accent-green rotate-45 ${

@@ -104,7 +104,7 @@ export function BalanceCard({ title, amount, variant }: BalanceCardProps) {
         </div>
       </div>
       <p
-        className={`mt-4 font-bold font-display leading-none tabular-nums ${styles.text} ${variant === 'balance' ? 'text-balance-xl' : 'text-2xl sm:text-3xl'}`}
+        className={`mt-4 font-bold font-display leading-none tabular-nums ${styles.text} ${variant === 'balance' ? 'text-balance-xl text-wrap' : 'text-2xl sm:text-3xl'}`}
         aria-label={formattedAmount}
       >
         {variant === 'balance' && isMounted ? displayFormatted : formattedAmount}
