@@ -46,49 +46,60 @@ export function ExportModal({ isOpen, onClose, userId: _userId, selectedMonth, s
     }
   }, [onClose])
 
+  // Update date range when modal opens or when selected month/year changes
   useEffect(() => {
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown)
-      document.body.style.overflow = 'hidden'
-      setError('')
-      setIsSuccess(false)
-      setIsExporting(false)
-      // Pre-populate with selected month's range if viewing a non-current month
-      if (selectedMonth && selectedYear && (selectedMonth !== today.getMonth() + 1 || selectedYear !== today.getFullYear())) {
-        const first = new Date(selectedYear, selectedMonth - 1, 1)
-        const last = new Date(selectedYear, selectedMonth, 0)
-        setDateFrom(format(first, 'yyyy-MM-dd'))
-        setDateTo(format(last, 'yyyy-MM-dd'))
-        setPreset('custom')
-      } else {
-        setPreset('thisMonth')
-        setDateFrom(format(firstOfMonth, 'yyyy-MM-dd'))
-        setDateTo(format(today, 'yyyy-MM-dd'))
-      }
+    if (!isOpen) return
+
+    document.addEventListener('keydown', handleKeyDown)
+    document.body.style.overflow = 'hidden'
+    setError('')
+    setIsSuccess(false)
+    setIsExporting(false)
+
+    const targetMonth = selectedMonth ?? today.getMonth() + 1
+    const targetYear = selectedYear ?? today.getFullYear()
+    const isCurrentMonth = targetMonth === today.getMonth() + 1 && targetYear === today.getFullYear()
+
+    if (!isCurrentMonth) {
+      // Viewing a historical month - set range to that full month
+      const first = new Date(targetYear, targetMonth - 1, 1)
+      const last = new Date(targetYear, targetMonth, 0)
+      setDateFrom(format(first, 'yyyy-MM-dd'))
+      setDateTo(format(last, 'yyyy-MM-dd'))
+      setPreset('custom')
+    } else {
+      // Current month - default to this month so far
+      const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+      setPreset('thisMonth')
+      setDateFrom(format(firstOfMonth, 'yyyy-MM-dd'))
+      setDateTo(format(today, 'yyyy-MM-dd'))
     }
+
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
       document.body.style.overflow = ''
       if (successTimer.current) clearTimeout(successTimer.current)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, handleKeyDown])
+  }, [isOpen, selectedMonth, selectedYear, handleKeyDown])
 
   const applyPreset = (p: Exclude<DatePreset, 'custom'>) => {
-    const now = new Date()
+    // Use the selected month/year context if available, otherwise current date
+    const targetMonth = selectedMonth ?? today.getMonth() + 1
+    const targetYear = selectedYear ?? today.getFullYear()
+
     if (p === 'thisMonth') {
-      const first = new Date(now.getFullYear(), now.getMonth(), 1)
+      const first = new Date(targetYear, targetMonth - 1, 1)
       setDateFrom(format(first, 'yyyy-MM-dd'))
-      setDateTo(format(now, 'yyyy-MM-dd'))
+      setDateTo(format(new Date(targetYear, targetMonth, 0), 'yyyy-MM-dd'))
     } else if (p === 'lastMonth') {
-      const first = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-      const last = new Date(now.getFullYear(), now.getMonth(), 0)
+      const first = new Date(targetYear, targetMonth - 2, 1)
+      const last = new Date(targetYear, targetMonth - 1, 0)
       setDateFrom(format(first, 'yyyy-MM-dd'))
       setDateTo(format(last, 'yyyy-MM-dd'))
     } else {
-      const first = new Date(now.getFullYear(), now.getMonth() - 2, 1)
+      const first = new Date(targetYear, targetMonth - 3, 1)
       setDateFrom(format(first, 'yyyy-MM-dd'))
-      setDateTo(format(now, 'yyyy-MM-dd'))
+      setDateTo(format(new Date(targetYear, targetMonth, 0), 'yyyy-MM-dd'))
     }
     setPreset(p)
     setError('')
