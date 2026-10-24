@@ -43,12 +43,15 @@ function App() {
   }, [isLoading, user, isGuest])
 
   // Animate waveform for voice demo
+  // (skipped while the dashboard is active — constant re-renders at 120ms
+  //  cadence starve interaction commits inside lazy modal sections)
   useEffect(() => {
+    if (isLoading || user || isGuest) return
     const interval = setInterval(() => {
       setWaveformPhase(p => (p + 1) % 20)
     }, 120)
     return () => clearInterval(interval)
-  }, [])
+  }, [isLoading, user, isGuest])
 
   const handleAuthSuccess = useCallback(() => {
     setShowAuthModal(false)
