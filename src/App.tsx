@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Sun, Moon, Mic } from 'lucide-react'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 import { useAuthStore } from './stores/authStore'
 import { useThemeStore } from './stores/themeStore'
 import { AuthModal } from './components/AuthModal'
@@ -249,11 +250,17 @@ function App() {
           onSuccess={handleAuthSuccess}
           isRecovery={isRecovery}
         />
+        <SpeedInsights />
       </>
     )
   }
 
-  return <Dashboard />
+  return (
+    <>
+      <Dashboard />
+      <SpeedInsights />
+    </>
+  )
 }
 
 export default App
